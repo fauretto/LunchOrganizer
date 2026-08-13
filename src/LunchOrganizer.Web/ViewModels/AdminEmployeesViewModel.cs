@@ -156,25 +156,22 @@ public sealed class AdminEmployeesViewModel : ViewModelBase
     // ---- Public methods ----
 
     /// <summary>
-    /// Idempotent: on a page remount (e.g. a language switch, which remounts the whole component
-    /// tree but reuses this same scoped ViewModel instance) this returns immediately without
-    /// touching <see cref="SearchQuery"/>/<see cref="IsAddFormOpen"/>/etc. Only the very first call
-    /// does real async work.
+    /// Re-fetches the employee list on every call so that changes made elsewhere (e.g. a new
+    /// employee registered from the Booking page) are reflected each time this panel is (re)mounted.
+    /// Only the employee list is refreshed; in-progress form state (<see cref="SearchQuery"/>,
+    /// <see cref="IsAddFormOpen"/>, the add/edit field values) is never touched here, so it is
+    /// preserved across a remount (e.g. a language switch, which remounts the whole component tree
+    /// but reuses this same scoped ViewModel instance).
     /// </summary>
     public Task InitializeAsync()
     {
-        if (_initialized)
-        {
-            return Task.CompletedTask;
-        }
-
-        return InitializeCoreAsync();
-    }
-
-    private async Task InitializeCoreAsync()
-    {
-        AllEmployees = await _employeeService.GetAllAsync(includeInactive: true);
+        // Always re-fetch the list on every (re)mount so that employees added elsewhere — e.g. a
+        // new employee registered from the Booking page — are reflected when returning to this
+        // panel. In-progress form state (SearchQuery, IsAddFormOpen, the add/edit field values)
+        // lives in separate fields that this method never touches, so it is still preserved across
+        // a language-switch remount (which reuses this same scoped ViewModel instance).
         _initialized = true;
+        return ReloadEmployeesAsync();
     }
 
     public void OpenAddForm()

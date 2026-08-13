@@ -45,6 +45,10 @@
 
 .report-table-wrapper {
     overflow-x: auto;
+    overflow-y: auto;
+    /* Cap the height so long reports become scrollable instead of running off the page,
+       keeping every row reachable within the panel. */
+    max-height: 60vh;
 }
 
 .report-table {
@@ -62,6 +66,11 @@
 .report-table th {
     font-weight: var(--font-weight-bold);
     color: var(--color-neutral-900);
+    /* Keep the column headers visible while the list scrolls vertically. */
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--color-surface);
 }
 
 .report-table td {
@@ -129,5 +138,15 @@
     .report-total-label,
     .report-total-value {
         color: var(--color-neutral-900) !important;
+    }
+
+    /* Never clip the report when printing — let the full table flow across pages. */
+    .report-table-wrapper {
+        overflow: visible;
+        max-height: none;
+    }
+
+    .report-table th {
+        position: static;
     }
 }

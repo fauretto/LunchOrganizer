@@ -114,6 +114,10 @@
 
 .employees-table-wrapper {
     overflow-x: auto;
+    overflow-y: auto;
+    /* Cap the height so long lists become scrollable instead of running off the page,
+       keeping every employee reachable within the panel. */
+    max-height: 60vh;
 }
 
 .employees-table {
@@ -131,6 +135,11 @@
 .employees-table th {
     font-weight: var(--font-weight-bold);
     color: var(--color-neutral-900);
+    /* Keep the column headers visible while the list scrolls vertically. */
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--color-surface);
 }
 
 .employees-table td {
