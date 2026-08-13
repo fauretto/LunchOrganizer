@@ -1,0 +1,137 @@
+/* ==========================================================================
+   LunchOrganizer — design system tokens
+   ==========================================================================
+   This file is the SINGLE SOURCE OF VISUAL TRUTH for the whole app. Every
+   color, radius, shadow, spacing, and font value used anywhere in this app
+   must reference one of the custom properties defined below — never a raw
+   hex/px value in a component stylesheet. Re-theming the entire application
+   means editing the values in this file only; nothing else should need to
+   change.
+
+   Loaded first, before Bootstrap and any component CSS, so token intent is
+   established as the foundation layer that everything else builds on.
+   ========================================================================== */
+
+:root {
+  /* ---- Palette: desaturated blue scale ---- */
+  --color-primary-900: #0F2A47;
+  --color-primary-700: #1B4F87;
+  --color-primary-500: #2E6DB4;
+  --color-primary-300: #5B93D3;
+  --color-primary-100: #E8F0F9;
+
+  /* ---- Neutrals ---- */
+  --color-neutral-900: #1F2933;   /* body text */
+  --color-neutral-700: #52606D;
+  --color-neutral-500: #7B8794;
+  --color-neutral-300: #CBD2D9;
+  --color-neutral-100: #F5F7FA;
+  --color-surface: #FFFFFF;
+  --color-background: #F5F7FA;
+
+  /* ---- Semantic ---- */
+  --color-warning: #B8863A;       /* muted amber */
+  --color-warning-bg: #FBF2E3;
+  --color-destructive: #B23A3A;   /* muted red */
+  --color-destructive-bg: #FBEAEA;
+  --color-success: #2E7D5B;       /* muted green, for confirmations */
+  --color-success-bg: #E7F3EC;
+  --color-focus-ring: #2E6DB4;
+
+  /* ---- Text on colors ---- */
+  --color-on-primary: #FFFFFF;
+  --color-on-warning: #3A2A0E;
+  --color-on-destructive: #FFFFFF;
+
+  /* ---- Gradients (subtle) ---- */
+  --gradient-header: linear-gradient(135deg, var(--color-primary-900), var(--color-primary-700));
+  --gradient-primary-button: linear-gradient(135deg, var(--color-primary-700), var(--color-primary-500));
+  --gradient-active-day: linear-gradient(180deg, var(--color-primary-100), var(--color-surface));
+
+  /* ---- Radius ---- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  /* ---- Shadow ---- */
+  --shadow-sm: 0 1px 2px rgba(15, 42, 71, 0.08);
+  --shadow-md: 0 4px 12px rgba(15, 42, 71, 0.12);
+  --shadow-lg: 0 12px 32px rgba(15, 42, 71, 0.16);
+
+  /* ---- Spacing scale ---- */
+  --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem;
+  --space-5: 1.5rem; --space-6: 2rem; --space-7: 3rem; --space-8: 4rem;
+
+  /* ---- Typography ---- */
+  --font-family-base: "Segoe UI Variable", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  --font-size-sm: clamp(0.8rem, 0.76rem + 0.2vw, 0.875rem);
+  --font-size-base: clamp(0.95rem, 0.9rem + 0.25vw, 1rem);
+  --font-size-lg: clamp(1.1rem, 1rem + 0.5vw, 1.25rem);
+  --font-size-xl: clamp(1.4rem, 1.2rem + 1vw, 1.75rem);
+  --font-size-2xl: clamp(1.8rem, 1.5rem + 1.5vw, 2.25rem);
+  --line-height-base: 1.5;
+  --font-weight-normal: 400; --font-weight-medium: 500; --font-weight-bold: 700;
+
+  /* ---- Touch targets / layout ---- */
+  --min-target: 44px;
+  --header-height: 64px;
+  --content-max-width: 1280px;
+
+  /* ---- Motion ---- */
+  --transition-fast: 120ms ease;
+  --transition-base: 200ms ease;
+
+  /* ---- Additional tokens for a complete system (not in the baseline list,
+     but required by later stages: layering and border width) ---- */
+  --z-header: 100;
+  --z-toast: 900;
+  --z-modal: 1000;
+  --border-width: 1px;
+}
+
+/* ==========================================================================
+   Global reset / base styles
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family-base);
+  color: var(--color-neutral-900);
+  background: var(--color-background);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+}
+
+img,
+picture,
+svg {
+  max-width: 100%;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@media print {
+  html,
+  body {
+    background: #FFFFFF !important;
+  }
+
+  /* Later stages refine per-component print rules; this root rule only
+     guarantees a plain white page background regardless of any on-screen
+     gradient/background class applied to the body or app shell. */
+}

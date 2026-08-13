@@ -1,0 +1,61 @@
+.price-editor {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.price-editor-label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-neutral-700);
+}
+
+.price-editor-value {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--min-target);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-md);
+    border: var(--border-width) solid transparent;
+    background: transparent;
+    color: var(--color-primary-900);
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-lg);
+    cursor: pointer;
+}
+
+.price-editor-value:hover,
+.price-editor-value:focus-visible {
+    border-color: var(--color-neutral-300);
+    background: var(--color-neutral-100);
+}
+
+.price-editor-input {
+    min-height: var(--min-target);
+    width: 8rem;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    border: var(--border-width) solid var(--color-neutral-300);
+    background: var(--color-surface);
+    color: var(--color-neutral-900);
+}
+
+.price-editor-invalid {
+    font-size: var(--font-size-sm);
+    color: var(--color-destructive);
+}
+
+.price-editor-apply-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--min-target);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
+    border: var(--border-width) solid var(--color-neutral-300);
+    background: var(--color-surface);
+    color: var(--color-neutral-900);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+}

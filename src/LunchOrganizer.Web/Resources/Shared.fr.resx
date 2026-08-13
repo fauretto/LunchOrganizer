@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppTitle" xml:space="preserve">
+    <value>LunchOrganizer</value>
+  </data>
+  <data name="AppTagline" xml:space="preserve">
+    <value>LunchOrganizer — réservation des repas</value>
+  </data>
+  <data name="NavBookingLink" xml:space="preserve">
+    <value>Réservation</value>
+  </data>
+  <data name="NavAdminLink" xml:space="preserve">
+    <value>Administration</value>
+  </data>
+  <data name="LanguageSwitchGroupAriaLabel" xml:space="preserve">
+    <value>Choix de la langue</value>
+  </data>
+  <data name="LanguageSwitchToFrench" xml:space="preserve">
+    <value>FR</value>
+  </data>
+  <data name="LanguageSwitchToEnglish" xml:space="preserve">
+    <value>EN</value>
+  </data>
+  <data name="LanguageSwitchToFrenchAriaLabel" xml:space="preserve">
+    <value>Passer en français</value>
+  </data>
+  <data name="LanguageSwitchToEnglishAriaLabel" xml:space="preserve">
+    <value>Passer en anglais</value>
+  </data>
+  <data name="ButtonSave" xml:space="preserve">
+    <value>Enregistrer</value>
+  </data>
+  <data name="ButtonCancel" xml:space="preserve">
+    <value>Annuler</value>
+  </data>
+  <data name="ButtonClose" xml:space="preserve">
+    <value>Fermer</value>
+  </data>
+  <data name="ButtonBack" xml:space="preserve">
+    <value>Retour</value>
+  </data>
+  <data name="ButtonConfirm" xml:space="preserve">
+    <value>Confirmer</value>
+  </data>
+  <data name="ButtonDelete" xml:space="preserve">
+    <value>Supprimer</value>
+  </data>
+  <data name="ButtonEdit" xml:space="preserve">
+    <value>Modifier</value>
+  </data>
+  <data name="ButtonAdd" xml:space="preserve">
+    <value>Ajouter</value>
+  </data>
+  <data name="ToastTitleSuccess" xml:space="preserve">
+    <value>Succès</value>
+  </data>
+  <data name="ToastTitleError" xml:space="preserve">
+    <value>Erreur</value>
+  </data>
+  <data name="ToastTitleInfo" xml:space="preserve">
+    <value>Information</value>
+  </data>
+  <data name="ToastCloseAriaLabel" xml:space="preserve">
+    <value>Fermer la notification</value>
+  </data>
+  <data name="ConfirmDialogDefaultTitle" xml:space="preserve">
+    <value>Merci de confirmer</value>
+  </data>
+  <data name="BusyIndicatorText" xml:space="preserve">
+    <value>Chargement…</value>
+  </data>
+  <data name="BusyIndicatorAriaLabel" xml:space="preserve">
+    <value>Chargement en cours, veuillez patienter</value>
+  </data>
+  <data name="EmptyStateDefaultText" xml:space="preserve">
+    <value>Rien à afficher ici.</value>
+  </data>
+  <data name="TodayLabel" xml:space="preserve">
+    <value>Aujourd'hui</value>
+  </data>
+  <data name="FooterText" xml:space="preserve">
+    <value>LunchOrganizer</value>
+  </data>
+  <data name="PrintedOnLabel" xml:space="preserve">
+    <value>Imprimé le {0}</value>
+  </data>
+  <data name="ErrorBannerMessage" xml:space="preserve">
+    <value>Une erreur est survenue. Veuillez recharger la page pour continuer.</value>
+  </data>
+  <data name="ErrorBannerReloadLink" xml:space="preserve">
+    <value>Recharger</value>
+  </data>
+  <data name="ErrorBannerDismissAriaLabel" xml:space="preserve">
+    <value>Fermer ce message</value>
+  </data>
+  <data name="ReconnectRejoining" xml:space="preserve">
+    <value>Reconnexion au serveur…</value>
+  </data>
+  <data name="ReconnectRetryingBeforeCount" xml:space="preserve">
+    <value>Échec de la reconnexion… nouvel essai dans </value>
+  </data>
+  <data name="ReconnectRetryingAfterCount" xml:space="preserve">
+    <value> secondes.</value>
+  </data>
+  <data name="ReconnectFailed" xml:space="preserve">
+    <value>Impossible de se reconnecter. Veuillez réessayer ou recharger la page.</value>
+  </data>
+  <data name="ReconnectRetryButton" xml:space="preserve">
+    <value>Réessayer</value>
+  </data>
+  <data name="ReconnectPaused" xml:space="preserve">
+    <value>La session a été mise en pause par le serveur.</value>
+  </data>
+  <data name="ReconnectResumeFailed" xml:space="preserve">
+    <value>Impossible de reprendre la session. Veuillez réessayer ou recharger la page.</value>
+  </data>
+  <data name="ReconnectResumeButton" xml:space="preserve">
+    <value>Reprendre</value>
+  </data>
+  <data name="MenuNumberLabelTemplate" xml:space="preserve">
+    <value>Menu {0}</value>
+  </data>
+  <data name="NotFoundTitle" xml:space="preserve">
+    <value>Page introuvable</value>
+  </data>
+  <data name="NotFoundMessage" xml:space="preserve">
+    <value>Désolé, la page que vous recherchez n’existe pas.</value>
+  </data>
+  <data name="ErrorPageTitle" xml:space="preserve">
+    <value>Une erreur est survenue</value>
+  </data>
+  <data name="ErrorPageMessage" xml:space="preserve">
+    <value>Veuillez réessayer. Si le problème persiste, contactez votre administrateur.</value>
+  </data>
+</root>

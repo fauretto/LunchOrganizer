@@ -1,0 +1,82 @@
+@using LunchOrganizer.Services.Dtos
+@inject IStringLocalizer<LunchOrganizer.Web.Resources.Admin> Loc
+@inject IStringLocalizer<LunchOrganizer.Web.Resources.Shared> SharedLoc
+
+<div class="menu-card">
+    <div class="menu-card-header">
+        <span class="menu-card-number">@SharedLoc["MenuNumberLabelTemplate", Menu.MenuNumber]</span>
+    </div>
+
+    <div class="menu-card-field">
+        <label for="menu-desc-@Menu.Id">@Loc["MenusDescriptionLabel"]</label>
+        <input id="menu-desc-@Menu.Id"
+               class="menu-card-description-input"
+               placeholder="@Loc["MenusDescriptionPlaceholder"]"
+               @bind="_descriptionDraft"
+               @bind:event="oninput"
+               @onblur="HandleBlurAsync" />
+    </div>
+
+    <div class="menu-card-actions">
+        <button type="button" class="menu-card-button menu-card-button-secondary" @onclick="() => OnCopyToWeek.InvokeAsync(Menu.Id)">
+            @Loc["MenusCopyDescriptionButton"]
+        </button>
+
+        @if (IsPastDate)
+        {
+            <span class="menu-card-blocked-note">@Loc["MenusDeleteBlockedPast"]</span>
+        }
+        else if (Menu.BookingCount > 0)
+        {
+            <span class="menu-card-blocked-note">@Loc["MenusDeleteConfirmTemplate", Menu.BookingCount]</span>
+        }
+        else
+        {
+            <button type="button" class="menu-card-button menu-card-button-destructive" @onclick="() => OnDelete.InvokeAsync(Menu.Id)">
+                @SharedLoc["ButtonDelete"]
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public MenuDto Menu { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<(int MenuId, string? Description)> OnUpdateDescription { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnDelete { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnCopyToWeek { get; set; }
+
+    [Parameter]
+    public bool CanDelete { get; set; }
+
+    [Parameter]
+    public bool IsPastDate { get; set; }
+
+    // Deliberate, accepted exception to the "everything meaningful lives on the ViewModel" rule
+    // (plan §6.6): this in-progress description edit buffer is a short-lived, promptly-committed
+    // (on blur) control. Losing an un-blurred edit on a rare mid-typing language switch is a minor
+    // acceptable risk, not silent loss of anything already persisted — same reasoning as
+    // PriceEditor's local editing buffer.
+    private string _descriptionDraft = string.Empty;
+    private int? _seededForMenuId;
+
+    protected override void OnParametersSet()
+    {
+        if (_seededForMenuId != Menu.Id)
+        {
+            _descriptionDraft = Menu.Description ?? string.Empty;
+            _seededForMenuId = Menu.Id;
+        }
+    }
+
+    private async Task HandleBlurAsync()
+    {
+        await OnUpdateDescription.InvokeAsync((Menu.Id, _descriptionDraft));
+    }
+}

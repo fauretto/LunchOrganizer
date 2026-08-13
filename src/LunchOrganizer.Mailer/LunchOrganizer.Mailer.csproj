@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\LunchOrganizer.Domain\LunchOrganizer.Domain.csproj" />
+    <ProjectReference Include="..\LunchOrganizer.Data\LunchOrganizer.Data.csproj" />
+    <ProjectReference Include="..\LunchOrganizer.Services\LunchOrganizer.Services.csproj" />
+    <ProjectReference Include="..\LunchOrganizer.Email\LunchOrganizer.Email.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
+    <!-- Pins the EF Core version consumed transitively via LunchOrganizer.Data to match the version
+         LunchOrganizer.Data was actually built against (Npgsql.EntityFrameworkCore.PostgreSQL alone
+         would resolve to an older EF Core and cause a CS1705 assembly-version mismatch). Same pattern
+         as LunchOrganizer.Web.csproj. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../config/*.json" Link="config/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

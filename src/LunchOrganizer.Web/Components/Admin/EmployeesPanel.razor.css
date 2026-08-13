@@ -1,0 +1,168 @@
+.employees-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.employees-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-4);
+}
+
+.employees-search {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.employees-search label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-neutral-700);
+}
+
+.employees-search-input {
+    min-height: var(--min-target);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    border: var(--border-width) solid var(--color-neutral-300);
+    background: var(--color-surface);
+    color: var(--color-neutral-900);
+}
+
+.employees-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--min-target);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
+    border: var(--border-width) solid transparent;
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+}
+
+.employees-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.employees-button-primary {
+    background: var(--gradient-primary-button);
+    color: var(--color-on-primary);
+}
+
+.employees-button-secondary {
+    background: var(--color-surface);
+    border-color: var(--color-neutral-300);
+    color: var(--color-neutral-900);
+}
+
+.employees-button-destructive {
+    background: var(--color-destructive-bg);
+    border-color: var(--color-destructive);
+    color: var(--color-destructive);
+}
+
+.employees-add-form,
+.employees-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: var(--border-width) solid var(--color-neutral-300);
+    background: var(--color-neutral-100);
+}
+
+.employees-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.employees-form-field label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-neutral-700);
+}
+
+.employees-form-field input {
+    min-height: var(--min-target);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    border: var(--border-width) solid var(--color-neutral-300);
+    background: var(--color-surface);
+    color: var(--color-neutral-900);
+}
+
+.employees-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
+
+.employees-empty-state {
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--color-neutral-100);
+    color: var(--color-neutral-700);
+}
+
+.employees-table-wrapper {
+    overflow-x: auto;
+}
+
+.employees-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.employees-table th,
+.employees-table td {
+    text-align: left;
+    padding: var(--space-2) var(--space-3);
+    border-bottom: var(--border-width) solid var(--color-neutral-300);
+}
+
+.employees-table th {
+    font-weight: var(--font-weight-bold);
+    color: var(--color-neutral-900);
+}
+
+.employees-table td {
+    color: var(--color-neutral-900);
+}
+
+.employees-no-email {
+    color: var(--color-neutral-500);
+    font-style: italic;
+}
+
+.employees-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-pill);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+}
+
+.employees-status-active {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+}
+
+.employees-status-inactive {
+    background: var(--color-neutral-100);
+    color: var(--color-neutral-700);
+}
+
+.employees-actions-cell {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}

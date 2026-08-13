@@ -1,0 +1,18 @@
+@inject IStringLocalizer<Shared> Loc
+
+@if (IsBusy)
+{
+    <span class="busy-indicator" role="status" aria-live="polite">
+        <span class="busy-spinner" role="img" aria-label="@Loc["BusyIndicatorAriaLabel"]"></span>
+        <span class="busy-label">@(Label ?? Loc["BusyIndicatorText"])</span>
+    </span>
+}
+
+@code {
+    [Parameter]
+    public bool IsBusy { get; set; }
+
+    /// <summary>Optional override for the visible text; defaults to <c>Shared:BusyIndicatorText</c>.</summary>
+    [Parameter]
+    public string? Label { get; set; }
+}

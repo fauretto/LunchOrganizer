@@ -1,0 +1,106 @@
+@using System.Globalization
+@using LunchOrganizer.Domain.Enums
+@using LunchOrganizer.Services.Dtos
+@using LunchOrganizer.Web.Formatting
+@inject IStringLocalizer<Booking> Loc
+@inject IStringLocalizer<Shared> SharedLoc
+
+@if (IsEmpty)
+{
+    <p class="grid-empty-state">@Loc["EmptyStateNoMenusThisWeek"]</p>
+}
+else
+{
+    <div class="grid-wrapper" style="--day-count: @Days.Count;">
+        @foreach (var day in Days)
+        {
+            var selectedMenuId = ResolveSelectedMenuId(day);
+            var dayLabel = DayLabel(day);
+            var priceLabel = PriceLabel(day);
+
+            <div class="day-column">
+                <div class="day-column-header">
+                    <span class="day-column-name">@dayLabel</span>
+                    <span class="day-column-price">
+                        <span class="day-column-price-label">@Loc["GridPriceLabel"]</span>
+                        <span class="day-column-price-value">@priceLabel</span>
+                    </span>
+                    @if (day.EditState == DayEditState.LockedPast)
+                    {
+                        <span class="day-column-locked-reason">@Loc["GridLockedReasonPast"]</span>
+                    }
+                    else if (day.EditState == DayEditState.LockedCutOff)
+                    {
+                        <span class="day-column-locked-reason">@Loc["GridLockedReasonClosedAtTemplate", CutOffTime.ToString("t", CultureInfo.CurrentCulture)]</span>
+                    }
+                </div>
+
+                <div class="day-column-cells">
+                    @foreach (var menuNumber in MenuNumberAxis)
+                    {
+                        var menu = day.Menus.FirstOrDefault(m => m.MenuNumber == menuNumber);
+
+                        if (menu is null)
+                        {
+                            <div class="grid-cell-empty" aria-hidden="true"></div>
+                        }
+                        else
+                        {
+                            var isSelected = selectedMenuId == menu.Id;
+                            var isDisabled = day.EditState != DayEditState.Editable;
+                            var menuId = menu.Id;
+
+                            <button type="button"
+                                    class="grid-cell @(isSelected ? "grid-cell-selected" : string.Empty) @(isDisabled ? "grid-cell-disabled" : string.Empty)"
+                                    disabled="@isDisabled"
+                                    aria-pressed="@(isSelected ? "true" : "false")"
+                                    aria-label="@Loc["GridCellSelectAriaLabelTemplate", dayLabel, menu.MenuNumber, priceLabel]"
+                                    @onclick="() => HandleCellClick(day.Date, menuId)">
+                                <span class="grid-cell-number">@SharedLoc["MenuNumberLabelTemplate", menu.MenuNumber]</span>
+                                @if (!string.IsNullOrWhiteSpace(menu.Description))
+                                {
+                                    <span class="grid-cell-description">@menu.Description</span>
+                                }
+                                @if (isSelected)
+                                {
+                                    <span class="grid-cell-check" aria-hidden="true">&#10003;</span>
+                                }
+                            </button>
+                        }
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public IReadOnlyList<DayViewDto> Days { get; set; } = Array.Empty<DayViewDto>();
+
+    [Parameter]
+    public IReadOnlyDictionary<DateOnly, int?> PendingSelections { get; set; } = new Dictionary<DateOnly, int?>();
+
+    [Parameter]
+    public EventCallback<(DateOnly Date, int MenuId)> OnCellClick { get; set; }
+
+    [Parameter]
+    public string Currency { get; set; } = string.Empty;
+
+    [Parameter]
+    public TimeOnly CutOffTime { get; set; }
+
+    private bool IsEmpty => Days.Count == 0 || Days.All(d => d.Menus.Count == 0);
+
+    private IReadOnlyList<int> MenuNumberAxis =>
+        Days.SelectMany(d => d.Menus).Select(m => m.MenuNumber).Distinct().OrderBy(n => n).ToList();
+
+    private static string DayLabel(DayViewDto day) => day.Date.ToString("dddd d MMMM", CultureInfo.CurrentCulture);
+
+    private string PriceLabel(DayViewDto day) => PriceFormatter.Format(day.Price, Currency, CultureInfo.CurrentCulture);
+
+    private int? ResolveSelectedMenuId(DayViewDto day) =>
+        PendingSelections.TryGetValue(day.Date, out var pending) ? pending : day.SelectedMenuId;
+
+    private Task HandleCellClick(DateOnly date, int menuId) => OnCellClick.InvokeAsync((date, menuId));
+}

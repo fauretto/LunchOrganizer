@@ -1,0 +1,21 @@
+{
+  "Email": {
+    "Mode": "PickupDirectory",
+    "SmtpHost": "",
+    "SmtpPort": 25,
+    "UseStartTls": false,
+    "Username": "",
+    "Password": "",
+    "SenderName": "Lunch Organizer",
+    "SenderAddress": "lunch-organizer@cohu.com",
+    "Recipients": [],
+    "SubjectPrefix": "COHU booked lunch for ",
+    "SubjectDateFormat": "dd.MM.yyyy",
+    "Language": "fr",
+    "SendTimeLocal": "09:01:00",
+    "WorkingDays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    "SkipWhenNoBookings": true,
+    "PickupDirectory": "./mail-drop",
+    "EnableInAppScheduler": false
+  }
+}

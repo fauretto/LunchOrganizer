@@ -1,0 +1,73 @@
+.admin-shell {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.admin-shell-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.admin-shell-header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.admin-shell-greeting {
+    color: var(--color-neutral-700);
+    font-size: var(--font-size-sm);
+}
+
+.admin-shell-signout-form {
+    margin: 0;
+}
+
+.admin-shell-signout-button {
+    min-height: var(--min-target);
+    padding: 0 var(--space-4);
+    border: var(--border-width) solid var(--color-neutral-300);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-neutral-900);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+}
+
+.admin-shell-signout-button:focus-visible {
+    outline: 3px solid var(--color-focus-ring);
+    outline-offset: 2px;
+}
+
+.admin-shell-tablist {
+    display: flex;
+    gap: var(--space-2);
+    border-bottom: var(--border-width) solid var(--color-neutral-300);
+}
+
+.admin-shell-tab {
+    min-height: var(--min-target);
+    padding: 0 var(--space-4);
+    border: none;
+    background: transparent;
+    color: var(--color-neutral-700);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+}
+
+.admin-shell-tab-active {
+    color: var(--color-primary-700);
+    border-bottom-color: var(--color-primary-700);
+}
+
+.admin-shell-tab:focus-visible {
+    outline: 3px solid var(--color-focus-ring);
+    outline-offset: 2px;
+}

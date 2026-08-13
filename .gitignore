@@ -1,0 +1,6 @@
+bin/
+obj/
+.vs/
+*.user
+config/*.local.json
+mail-drop/

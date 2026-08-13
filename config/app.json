@@ -1,0 +1,12 @@
+{
+  "App": {
+    "DefaultLunchPrice": 12.50,
+    "Currency": "CHF",
+    "DefaultCulture": "fr-CH",
+    "SupportedCultures": [ "fr-CH", "en-CH" ],
+    "BookingCutOffLocalTime": "09:00:00",
+    "AutocompleteMinChars": 2,
+    "AutocompleteMaxResults": 10,
+    "MaxMenusPerDay": 10
+  }
+}

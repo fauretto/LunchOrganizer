@@ -1,0 +1,14 @@
+{
+  "Database": {
+    "Host": "localhost",
+    "Port": 5432,
+    "Database": "lunchorganizer",
+    "Username": "postgres",
+    "Password": "changeme",
+    "MaintenanceDatabase": "postgres",
+    "AutoCreateDatabase": true,
+    "Seed": false,
+    "MaxPoolSize": 50,
+    "CommandTimeoutSeconds": 30
+  }
+}

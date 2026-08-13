@@ -1,0 +1,96 @@
+/* ==========================================================================
+   LunchOrganizer — dark theme, DEMONSTRATION ONLY
+   ==========================================================================
+   This file is NOT wired into the app by default and no other stylesheet or
+   component references it. It exists purely to prove that re-theming this
+   application means editing custom-property VALUES only: every property
+   name below is identical to the one defined in theme.css, just with
+   dark-appropriate values.
+
+   To activate this demonstration:
+     1. Add <link rel="stylesheet" href="css/theme.sample-dark.css" /> in
+        App.razor, AFTER the existing theme.css link (so these values win the
+        cascade for that attribute).
+     2. Set data-theme="dark-sample" on the root <html> element.
+
+   The selector below is deliberately namespaced to :root[data-theme="dark-sample"]
+   so simply including this file does nothing on its own — it never
+   accidentally activates without that explicit attribute being set.
+   ========================================================================== */
+
+:root[data-theme="dark-sample"] {
+  /* ---- Palette: desaturated blue scale (inverted for dark surfaces) ---- */
+  --color-primary-900: #DCEBFB;
+  --color-primary-700: #9CC3EC;
+  --color-primary-500: #5B93D3;
+  --color-primary-300: #2E6DB4;
+  --color-primary-100: #14304F;
+
+  /* ---- Neutrals ---- */
+  --color-neutral-900: #F0F3F6;   /* body text */
+  --color-neutral-700: #C4CDD5;
+  --color-neutral-500: #8F9BA8;
+  --color-neutral-300: #3E4C59;
+  --color-neutral-100: #1B232C;
+  --color-surface: #202A33;
+  --color-background: #141A20;
+
+  /* ---- Semantic ---- */
+  --color-warning: #E0B074;       /* muted amber, lightened for dark bg */
+  --color-warning-bg: #3A2E17;
+  --color-destructive: #E08585;   /* muted red, lightened for dark bg */
+  --color-destructive-bg: #3A1F1F;
+  --color-success: #7FC4A3;       /* muted green, lightened for dark bg */
+  --color-success-bg: #1C3529;
+  --color-focus-ring: #9CC3EC;
+
+  /* ---- Text on colors ---- */
+  --color-on-primary: #0F2A47;
+  --color-on-warning: #3A2A0E;
+  --color-on-destructive: #2E0E0E;
+
+  /* ---- Gradients (subtle) ---- */
+  --gradient-header: linear-gradient(135deg, #0B1620, #14304F);
+  --gradient-primary-button: linear-gradient(135deg, #14304F, #2E6DB4);
+  --gradient-active-day: linear-gradient(180deg, #1B232C, #202A33);
+
+  /* ---- Radius (unchanged shapes, dark theme doesn't need different geometry) ---- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  /* ---- Shadow (heavier/darker to read against a dark surface) ---- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
+
+  /* ---- Spacing scale (unchanged — spacing is not a color concern) ---- */
+  --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem;
+  --space-5: 1.5rem; --space-6: 2rem; --space-7: 3rem; --space-8: 4rem;
+
+  /* ---- Typography (unchanged — type scale is not a color concern) ---- */
+  --font-family-base: "Segoe UI Variable", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  --font-size-sm: clamp(0.8rem, 0.76rem + 0.2vw, 0.875rem);
+  --font-size-base: clamp(0.95rem, 0.9rem + 0.25vw, 1rem);
+  --font-size-lg: clamp(1.1rem, 1rem + 0.5vw, 1.25rem);
+  --font-size-xl: clamp(1.4rem, 1.2rem + 1vw, 1.75rem);
+  --font-size-2xl: clamp(1.8rem, 1.5rem + 1.5vw, 2.25rem);
+  --line-height-base: 1.5;
+  --font-weight-normal: 400; --font-weight-medium: 500; --font-weight-bold: 700;
+
+  /* ---- Touch targets / layout (unchanged — geometry is not a color concern) ---- */
+  --min-target: 44px;
+  --header-height: 64px;
+  --content-max-width: 1280px;
+
+  /* ---- Motion (unchanged) ---- */
+  --transition-fast: 120ms ease;
+  --transition-base: 200ms ease;
+
+  /* ---- Additional tokens introduced in theme.css ---- */
+  --z-header: 100;
+  --z-toast: 900;
+  --z-modal: 1000;
+  --border-width: 1px;
+}

@@ -1,0 +1,12 @@
+Here my answers :
+1. Confrim
+2. Confirm
+3. Use your assumptions
+4. I prefer admin-only
+5. I would like to add an authentication for the admin page. The list of authenticated users and theri password is stored in a json file editable with notepadd++. I don't need an high level of security to access this file.
+6. we can see this point more in details during the implementation phase, I don't know how this point can be implemented actually. I let you propose some solutions.
+7. I accept your suggestion
+8. Monday–Friday only, no holiday calendar. when zero bookings exist for the day — skip
+9. server already installed on this laptop. I'll give you the access parameters later on. ask me when you need it
+10. Confirm your suggestion : .NET 9 Blazor Web App with Server interactivity — direct DB access from components, real-time UI, no separate API layer, and it hosts the background service naturally
+11. compact at explicit safe checkpoints (all agents at a validated intermediate state) and keep Docs/ progress files detailed enough that nothing is lost across a compaction

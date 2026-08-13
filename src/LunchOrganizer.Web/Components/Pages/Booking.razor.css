@@ -1,0 +1,199 @@
+.booking-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    max-width: var(--content-max-width);
+}
+
+.booking-heading {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-neutral-900);
+    margin: 0;
+    text-transform: capitalize;
+}
+
+.print-only {
+    display: none;
+}
+
+.register-prompt {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--color-warning-bg);
+    border: var(--border-width) solid var(--color-warning);
+    color: var(--color-on-warning);
+    max-width: 32rem;
+}
+
+.register-prompt-question {
+    margin: 0;
+    font-weight: var(--font-weight-medium);
+}
+
+.register-prompt-similar-lead-in {
+    margin: 0;
+    font-size: var(--font-size-sm);
+}
+
+.register-prompt-similar-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.register-prompt-similar-btn {
+    min-height: var(--min-target);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-pill);
+    border: var(--border-width) solid var(--color-warning);
+    background: var(--color-surface);
+    color: var(--color-on-warning);
+    cursor: pointer;
+}
+
+.register-prompt-actions {
+    display: flex;
+    gap: var(--space-3);
+}
+
+.register-prompt-confirm-btn,
+.register-prompt-cancel-btn {
+    min-height: var(--min-target);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-weight: var(--font-weight-medium);
+}
+
+.register-prompt-confirm-btn {
+    background: var(--color-primary-700);
+    color: var(--color-on-primary);
+    border: none;
+}
+
+.register-prompt-cancel-btn {
+    background: var(--color-surface);
+    color: var(--color-neutral-700);
+    border: var(--border-width) solid var(--color-neutral-300);
+}
+
+.today-banner {
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.today-banner p {
+    margin: 0;
+}
+
+.today-banner-booked {
+    background: var(--color-primary-100);
+    color: var(--color-primary-900);
+}
+
+.today-banner-unbooked {
+    background: var(--color-neutral-100);
+    color: var(--color-neutral-900);
+}
+
+.whole-week-shortcut {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.whole-week-select {
+    min-height: var(--min-target);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    border: var(--border-width) solid var(--color-neutral-300);
+    background: var(--color-surface);
+    color: var(--color-neutral-900);
+}
+
+.whole-week-apply-btn {
+    min-height: var(--min-target);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
+    border: var(--border-width) solid var(--color-primary-700);
+    background: var(--color-surface);
+    color: var(--color-primary-700);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+}
+
+.whole-week-apply-btn:disabled {
+    border-color: var(--color-neutral-300);
+    color: var(--color-neutral-500);
+    cursor: not-allowed;
+}
+
+.whole-week-result {
+    flex: 1 1 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    font-size: var(--font-size-sm);
+    color: var(--color-neutral-700);
+}
+
+.whole-week-result-lead-in {
+    margin: 0;
+    font-weight: var(--font-weight-medium);
+}
+
+.whole-week-result-list {
+    margin: 0;
+    padding-left: var(--space-5);
+}
+
+.submit-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.submit-button {
+    min-height: var(--min-target);
+    padding: var(--space-3) var(--space-6);
+    border-radius: var(--radius-md);
+    border: none;
+    background: var(--gradient-primary-button);
+    color: var(--color-on-primary);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+}
+
+.submit-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+
+    .print-only {
+        display: block;
+    }
+
+    .today-banner {
+        background: var(--color-surface) !important;
+        color: var(--color-neutral-900) !important;
+        border: var(--border-width) solid var(--color-neutral-300);
+    }
+}

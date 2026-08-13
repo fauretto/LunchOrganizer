@@ -1,0 +1,162 @@
+@using LunchOrganizer.Domain
+@using LunchOrganizer.Services.Dtos
+@implements IDisposable
+@inject IStringLocalizer<Booking> Loc
+
+<div class="employee-autocomplete">
+    <label for="employee-name-input" class="employee-autocomplete-label">@Loc["EmployeeFieldLabel"]</label>
+    <input id="employee-name-input"
+           type="text"
+           autofocus
+           autocomplete="off"
+           class="employee-autocomplete-input"
+           placeholder="@Loc["EmployeeFieldPlaceholder"]"
+           value="@Value"
+           role="combobox"
+           aria-expanded="@((_isOpen && Suggestions.Count > 0) ? "true" : "false")"
+           aria-controls="employee-autocomplete-listbox"
+           @oninput="HandleInput"
+           @onkeydown="HandleKeyDown" />
+
+    @if (Value.Length > 0 && Value.Length < MinChars)
+    {
+        <p class="employee-autocomplete-helper">@Loc["EmployeeFieldMinCharsHelperTemplate", MinChars]</p>
+    }
+
+    @if (_isOpen && Suggestions.Count > 0)
+    {
+        <ul id="employee-autocomplete-listbox" class="employee-autocomplete-list" role="listbox">
+            @for (var i = 0; i < Suggestions.Count; i++)
+            {
+                var index = i;
+                var suggestion = Suggestions[index];
+                <li role="option"
+                    aria-selected="@(index == _highlightedIndex ? "true" : "false")"
+                    class="employee-autocomplete-option @(index == _highlightedIndex ? "employee-autocomplete-option-highlighted" : string.Empty)"
+                    @onclick="() => HandleSelect(suggestion)">
+                    @suggestion.FullName
+                </li>
+            }
+        </ul>
+    }
+    else if (!IsLoading && Suggestions.Count == 0 && Value.Length >= MinChars)
+    {
+        <p class="employee-autocomplete-no-matches">@Loc["EmployeeNoMatches"]</p>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<EmployeeDto> Suggestions { get; set; } = Array.Empty<EmployeeDto>();
+
+    [Parameter]
+    public EventCallback<EmployeeDto> OnSelect { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnDebouncedInput { get; set; }
+
+    [Parameter]
+    public int MinChars { get; set; }
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    private bool _isOpen;
+    private int _highlightedIndex = -1;
+    private CancellationTokenSource? _debounceCts;
+
+    private async Task HandleInput(ChangeEventArgs e)
+    {
+        var newValue = e.Value as string ?? string.Empty;
+
+        _isOpen = true;
+        _highlightedIndex = -1;
+
+        await ValueChanged.InvokeAsync(newValue);
+
+        _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
+        var cts = new CancellationTokenSource();
+        _debounceCts = cts;
+
+        _ = DebounceAndFireAsync(newValue, cts.Token);
+    }
+
+    private async Task DebounceAndFireAsync(string text, CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(BusinessRules.AutocompleteDebounceMilliseconds, token);
+
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            await InvokeAsync(() => OnDebouncedInput.InvokeAsync(text));
+        }
+        catch (TaskCanceledException)
+        {
+            // Superseded by a newer keystroke before the delay elapsed — expected, ignore.
+        }
+        catch (OperationCanceledException)
+        {
+            // Superseded by a newer keystroke before the delay elapsed — expected, ignore.
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "ArrowDown":
+                if (Suggestions.Count > 0)
+                {
+                    _isOpen = true;
+                    _highlightedIndex = Math.Min(_highlightedIndex + 1, Suggestions.Count - 1);
+                }
+                break;
+
+            case "ArrowUp":
+                _highlightedIndex = Math.Max(_highlightedIndex - 1, 0);
+                break;
+
+            case "Enter":
+                if (_highlightedIndex >= 0 && _highlightedIndex < Suggestions.Count)
+                {
+                    await HandleSelect(Suggestions[_highlightedIndex]);
+                }
+                else
+                {
+                    // No highlighted suggestion (or none at all): bypass the debounce timer so the
+                    // "no exact match, register?" logic in the parent can react immediately.
+                    _debounceCts?.Cancel();
+                    await OnDebouncedInput.InvokeAsync(Value);
+                }
+                break;
+
+            case "Escape":
+                _isOpen = false;
+                break;
+        }
+    }
+
+    private async Task HandleSelect(EmployeeDto employee)
+    {
+        _isOpen = false;
+        _highlightedIndex = -1;
+        await OnSelect.InvokeAsync(employee);
+    }
+
+    public void Dispose()
+    {
+        _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
+    }
+}

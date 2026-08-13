@@ -1,0 +1,80 @@
+@rendermode InteractiveServer
+@implements IDisposable
+@inject IConfirmDialogService ConfirmService
+
+@if (_request is not null)
+{
+    <div class="confirm-backdrop" @onkeydown="HandleKeyDown">
+        <div class="confirm-card"
+             role="alertdialog"
+             aria-modal="true"
+             aria-labelledby="confirm-dialog-title"
+             aria-describedby="confirm-dialog-message">
+            <h2 id="confirm-dialog-title" class="confirm-title">@_request.Title</h2>
+            <p id="confirm-dialog-message" class="confirm-message">@_request.Message</p>
+            <div class="confirm-actions">
+                <button type="button" class="confirm-btn" @ref="_cancelButtonRef" @onclick="Cancel">@_request.CancelLabel</button>
+                <button type="button" class="confirm-btn @(_request.IsDestructive ? "confirm-btn-destructive" : "confirm-btn-primary")" @onclick="Confirm">@_request.ConfirmLabel</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private ConfirmRequest? _request;
+    private ElementReference _cancelButtonRef;
+    private bool _shouldFocusCancel;
+
+    protected override void OnInitialized()
+    {
+        ConfirmService.Requested += HandleRequested;
+    }
+
+    private void HandleRequested(ConfirmRequest request)
+    {
+        _request = request;
+        _shouldFocusCancel = true;
+        InvokeAsync(StateHasChanged);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_shouldFocusCancel)
+        {
+            _shouldFocusCancel = false;
+            try
+            {
+                await _cancelButtonRef.FocusAsync();
+            }
+            catch (JSException)
+            {
+                // The dialog may already have been dismissed (e.g. resolved by another code path)
+                // before this render completed — nothing left to focus in that case.
+            }
+        }
+    }
+
+    private void Confirm() => Resolve(true);
+
+    private void Cancel() => Resolve(false);
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            Cancel();
+        }
+    }
+
+    private void Resolve(bool result)
+    {
+        _request = null;
+        ((ConfirmDialogService)ConfirmService).Resolve(result);
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ConfirmService.Requested -= HandleRequested;
+    }
+}

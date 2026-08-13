@@ -1,0 +1,96 @@
+@rendermode InteractiveServer
+@inject CultureState CultureState
+@inject Microsoft.Extensions.Options.IOptionsMonitor<LunchOrganizer.Domain.Configuration.AppOptions> AppOptionsMonitor
+@inject IJSRuntime JS
+@inject IStringLocalizer<Shared> Loc
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+
+<header class="app-header">
+    <div class="app-header-inner">
+        <a class="app-header-brand" href="/">
+            <span class="app-header-title">@Loc["AppTitle"]</span>
+            <span class="app-header-tagline">@Loc["AppTagline"]</span>
+        </a>
+
+        <div class="app-header-actions">
+            <div class="app-header-lang" role="group" aria-label="@Loc["LanguageSwitchGroupAriaLabel"]">
+                @foreach (var culture in SupportedCultures)
+                {
+                    var isActive = string.Equals(CultureState.Current.Name, culture, StringComparison.OrdinalIgnoreCase);
+                    <button type="button"
+                            class="app-header-lang-btn @(isActive ? "app-header-lang-btn-active" : "")"
+                            aria-label="@GetAriaLabel(culture)"
+                            aria-current="@(isActive ? "true" : null)"
+                            @onclick="() => SwitchCulture(culture)">
+                        @GetLabel(culture)
+                    </button>
+                }
+            </div>
+
+            <a class="app-header-admin-link" href="/admin">@Loc["NavAdminLink"]</a>
+        </div>
+    </div>
+</header>
+
+<ToastHost />
+<ConfirmDialogHost />
+
+@code {
+    private IJSObjectReference? _cultureModule;
+
+    private IList<string> SupportedCultures => AppOptionsMonitor.CurrentValue.SupportedCultures;
+
+    private string GetLabel(string culture) =>
+        IsFrench(culture) ? Loc["LanguageSwitchToFrench"] : Loc["LanguageSwitchToEnglish"];
+
+    private string GetAriaLabel(string culture) =>
+        IsFrench(culture) ? Loc["LanguageSwitchToFrenchAriaLabel"] : Loc["LanguageSwitchToEnglishAriaLabel"];
+
+    private static bool IsFrench(string culture) =>
+        culture.StartsWith("fr", StringComparison.OrdinalIgnoreCase);
+
+    private async Task SwitchCulture(string culture)
+    {
+        // Clicking the already-active language is a no-op — avoid a pointless reload.
+        if (string.Equals(CultureState.Current.Name, culture, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        if (!CultureState.IsSupported(culture))
+        {
+            return;
+        }
+
+        // Blazor Server derives its culture from the request (RequestLocalizationMiddleware), not
+        // from circuit state, so switching language requires a full reload rather than an
+        // in-place re-render. The cookie write must be awaited before navigating — otherwise the
+        // reload could race the write and the reloaded request would still read the old cookie.
+        var module = await GetCultureModuleAsync();
+        await module.InvokeVoidAsync("setCultureCookie", CultureCookie.CookieName, CultureCookie.Build(culture));
+
+        Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+    }
+
+    private async Task<IJSObjectReference> GetCultureModuleAsync()
+    {
+        _cultureModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/culture.js");
+        return _cultureModule;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_cultureModule is not null)
+        {
+            try
+            {
+                await _cultureModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // The circuit is already gone (e.g. tab closed) — nothing left to release.
+            }
+        }
+    }
+}

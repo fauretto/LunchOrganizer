@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="LoginTitle" xml:space="preserve">
+    <value>Connexion administration</value>
+  </data>
+  <data name="LoginUsernameLabel" xml:space="preserve">
+    <value>Nom d’utilisateur</value>
+  </data>
+  <data name="LoginPasswordLabel" xml:space="preserve">
+    <value>Mot de passe</value>
+  </data>
+  <data name="LoginSubmitButton" xml:space="preserve">
+    <value>Se connecter</value>
+  </data>
+  <data name="LoginInvalidCredentials" xml:space="preserve">
+    <value>Nom d’utilisateur ou mot de passe incorrect.</value>
+  </data>
+  <data name="LoginRateLimited" xml:space="preserve">
+    <value>Trop de tentatives. Veuillez patienter une minute puis réessayer.</value>
+  </data>
+  <data name="ShellPageTitle" xml:space="preserve">
+    <value>Administration</value>
+  </data>
+  <data name="ShellGreetingTemplate" xml:space="preserve">
+    <value>Bonjour, {0}</value>
+  </data>
+  <data name="TabReport" xml:space="preserve">
+    <value>Rapport</value>
+  </data>
+  <data name="TabEmployees" xml:space="preserve">
+    <value>Employés</value>
+  </data>
+  <data name="TabMenusAndPrices" xml:space="preserve">
+    <value>Menus et prix</value>
+  </data>
+  <data name="SignOutLabel" xml:space="preserve">
+    <value>Se déconnecter</value>
+  </data>
+  <data name="ReportEmployeeFilterLabel" xml:space="preserve">
+    <value>Employé</value>
+  </data>
+  <data name="ReportAllEmployeesOption" xml:space="preserve">
+    <value>Tous les employés</value>
+  </data>
+  <data name="ReportStartDateLabel" xml:space="preserve">
+    <value>Date de début</value>
+  </data>
+  <data name="ReportEndDateLabel" xml:space="preserve">
+    <value>Date de fin</value>
+  </data>
+  <data name="ReportColumnEmployee" xml:space="preserve">
+    <value>Employé</value>
+  </data>
+  <data name="ReportColumnDate" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="ReportColumnDay" xml:space="preserve">
+    <value>Jour</value>
+  </data>
+  <data name="ReportColumnMenu" xml:space="preserve">
+    <value>Menu</value>
+  </data>
+  <data name="ReportColumnDescription" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="ReportColumnPrice" xml:space="preserve">
+    <value>Prix</value>
+  </data>
+  <data name="ReportPeriodTotalLabel" xml:space="preserve">
+    <value>Total de la période</value>
+  </data>
+  <data name="ReportExportCsvButton" xml:space="preserve">
+    <value>Exporter en CSV</value>
+  </data>
+  <data name="ReportEmptyState" xml:space="preserve">
+    <value>Aucune réservation trouvée pour les filtres sélectionnés.</value>
+  </data>
+  <data name="ReportPrintHeading" xml:space="preserve">
+    <value>Rapport des réservations de repas</value>
+  </data>
+  <data name="EmployeesListHeader" xml:space="preserve">
+    <value>Employés</value>
+  </data>
+  <data name="EmployeesSearchLabel" xml:space="preserve">
+    <value>Rechercher</value>
+  </data>
+  <data name="EmployeesAddButton" xml:space="preserve">
+    <value>Ajouter un employé</value>
+  </data>
+  <data name="EmployeesAddDialogTitle" xml:space="preserve">
+    <value>Ajouter un employé</value>
+  </data>
+  <data name="EmployeesNameLabel" xml:space="preserve">
+    <value>Nom</value>
+  </data>
+  <data name="EmployeesEmailLabel" xml:space="preserve">
+    <value>Email (facultatif)</value>
+  </data>
+  <data name="EmployeesEditDialogTitle" xml:space="preserve">
+    <value>Modifier l’employé</value>
+  </data>
+  <data name="EmployeesDeletableConfirmTemplate" xml:space="preserve">
+    <value>Supprimer {0} ? Cette personne n’a jamais réservé de repas, rien ne sera perdu.</value>
+  </data>
+  <data name="EmployeesNonDeletableConfirmTemplate" xml:space="preserve">
+    <value>{0} a {1} réservations, elle ne peut donc pas être supprimée. Vous pouvez la désactiver à la place — son historique est conservé et son nom n’apparaît plus dans la liste.</value>
+  </data>
+  <data name="EmployeesDeactivateButton" xml:space="preserve">
+    <value>Désactiver</value>
+  </data>
+  <data name="EmployeesDeactivatedToast" xml:space="preserve">
+    <value>{0} est maintenant inactif·ve.</value>
+  </data>
+  <data name="EmployeesDeletedToast" xml:space="preserve">
+    <value>{0} supprimé·e.</value>
+  </data>
+  <data name="EmployeesEmptyState" xml:space="preserve">
+    <value>Aucun employé enregistré pour l’instant.</value>
+  </data>
+  <data name="EmployeesNoEmail" xml:space="preserve">
+    <value>Aucun e-mail enregistré</value>
+  </data>
+  <data name="EmployeesStatusActive" xml:space="preserve">
+    <value>Actif</value>
+  </data>
+  <data name="EmployeesStatusInactive" xml:space="preserve">
+    <value>Inactif</value>
+  </data>
+  <data name="MenusWeekSelectorNote" xml:space="preserve">
+    <value>Utilisez le sélecteur de semaine ci-dessus pour choisir la semaine à modifier.</value>
+  </data>
+  <data name="MenusAddButton" xml:space="preserve">
+    <value>Ajouter un menu</value>
+  </data>
+  <data name="MenusDescriptionLabel" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="MenusDescriptionPlaceholder" xml:space="preserve">
+    <value>p. ex. Poulet grillé avec riz</value>
+  </data>
+  <data name="MenusDeleteConfirmTemplate" xml:space="preserve">
+    <value>{0} personnes ont déjà choisi ce menu, il ne peut donc pas être supprimé.</value>
+  </data>
+  <data name="MenusDeleteConfirmNoBookings" xml:space="preserve">
+    <value>Ce menu n’a jamais été réservé, il peut donc être supprimé.</value>
+  </data>
+  <data name="MenusCopyDescriptionButton" xml:space="preserve">
+    <value>Copier cette description sur toute la semaine</value>
+  </data>
+  <data name="MenusCopyDescriptionToast" xml:space="preserve">
+    <value>Description copiée sur toute la semaine.</value>
+  </data>
+  <data name="MenusDayPriceLabel" xml:space="preserve">
+    <value>Prix pour ce jour</value>
+  </data>
+  <data name="MenusApplyPriceToWeekButton" xml:space="preserve">
+    <value>Appliquer ce prix à toute la semaine</value>
+  </data>
+  <data name="MenusApplyPriceToast" xml:space="preserve">
+    <value>Prix appliqué à toute la semaine.</value>
+  </data>
+  <data name="MenusInvalidPrice" xml:space="preserve">
+    <value>Entrez un prix comme 12.50 ou 12,50.</value>
+  </data>
+  <data name="MenusDeleteBlockedPast" xml:space="preserve">
+    <value>Ce menu concerne un jour passé et ne peut plus être supprimé.</value>
+  </data>
+</root>

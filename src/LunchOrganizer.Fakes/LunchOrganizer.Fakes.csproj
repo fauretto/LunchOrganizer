@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\LunchOrganizer.Domain\LunchOrganizer.Domain.csproj" />
+    <ProjectReference Include="..\LunchOrganizer.Services\LunchOrganizer.Services.csproj" />
+    <ProjectReference Include="..\LunchOrganizer.Email\LunchOrganizer.Email.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

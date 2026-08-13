@@ -1,0 +1,56 @@
+.app-main {
+    display: flex;
+    justify-content: center;
+}
+
+.app-content {
+    width: 100%;
+    max-width: var(--content-max-width);
+    padding: var(--space-5) var(--space-4);
+}
+
+@media (max-width: 599px) {
+    .app-content {
+        padding: var(--space-4) var(--space-3);
+    }
+}
+
+#blazor-error-ui {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    box-sizing: border-box;
+    z-index: calc(var(--z-toast) + 1);
+    background: var(--color-destructive-bg);
+    color: var(--color-destructive);
+    border-top: var(--border-width) solid var(--color-destructive);
+    padding: var(--space-3) var(--space-7) var(--space-3) var(--space-4);
+    box-shadow: var(--shadow-md);
+    font-size: var(--font-size-sm);
+}
+
+    #blazor-error-ui .reload {
+        color: var(--color-destructive);
+        font-weight: var(--font-weight-bold);
+        text-decoration: underline;
+        margin-left: var(--space-2);
+    }
+
+    #blazor-error-ui .dismiss {
+        position: absolute;
+        top: 50%;
+        right: var(--space-2);
+        transform: translateY(-50%);
+        min-width: var(--min-target);
+        min-height: var(--min-target);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        color: var(--color-destructive);
+        font-size: var(--font-size-base);
+        cursor: pointer;
+    }

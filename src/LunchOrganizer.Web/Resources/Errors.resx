@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="WeekInPast" xml:space="preserve">
+    <value>This week is in the past, so it can no longer be booked or changed.</value>
+  </data>
+  <data name="BookingDateInPast" xml:space="preserve">
+    <value>That date is in the past, so a lunch can’t be booked for it.</value>
+  </data>
+  <data name="BookingCutOffPassed" xml:space="preserve">
+    <value>It’s past {0}, so today’s lunch can’t be changed any more. You can still book from tomorrow.</value>
+  </data>
+  <data name="MenuNotFoundForDay" xml:space="preserve">
+    <value>This menu is no longer available for that day. Please choose another one.</value>
+  </data>
+  <data name="MenuNotFoundInWeek" xml:space="preserve">
+    <value>This menu could not be found in the selected week. Please refresh the page and try again.</value>
+  </data>
+  <data name="EmployeeNotFound" xml:space="preserve">
+    <value>This employee could not be found. Please refresh the page and try again.</value>
+  </data>
+  <data name="EmployeeNameRequired" xml:space="preserve">
+    <value>Please enter a name before continuing.</value>
+  </data>
+  <data name="EmployeeNameAlreadyExists" xml:space="preserve">
+    <value>{0} is already registered.</value>
+  </data>
+  <data name="EmployeeHasBookings" xml:space="preserve">
+    <value>This person has {0} bookings, so they can’t be removed. You can set them to inactive instead.</value>
+  </data>
+  <data name="MenuHasBookings" xml:space="preserve">
+    <value>{0} people have already chosen this menu, so it can’t be removed.</value>
+  </data>
+  <data name="MenuDateInPast" xml:space="preserve">
+    <value>That date is in the past, so a menu can’t be added or changed for it.</value>
+  </data>
+  <data name="MenuNumberConflict" xml:space="preserve">
+    <value>That menu number is already used for that day. Please choose a different number.</value>
+  </data>
+  <data name="MaxMenusPerDayReached" xml:space="preserve">
+    <value>This day already has the maximum of {0} menus. Remove one before adding another.</value>
+  </data>
+  <data name="PriceInvalid" xml:space="preserve">
+    <value>Enter a price like 12.50 or 12,50.</value>
+  </data>
+  <data name="DateRangeInvalid" xml:space="preserve">
+    <value>The end date must be on or after the start date. Please adjust the dates.</value>
+  </data>
+  <data name="ConcurrencyConflict" xml:space="preserve">
+    <value>Someone else changed this in the meantime. Please refresh the page and try again.</value>
+  </data>
+  <data name="EmailAlreadySentForDate" xml:space="preserve">
+    <value>The daily summary email has already been sent for that date.</value>
+  </data>
+  <data name="NoBookingsForDate" xml:space="preserve">
+    <value>There are no bookings for that date, so there is nothing to send or report.</value>
+  </data>
+  <data name="Unexpected" xml:space="preserve">
+    <value>Something went wrong and your booking was not saved. Please try again.</value>
+  </data>
+</root>

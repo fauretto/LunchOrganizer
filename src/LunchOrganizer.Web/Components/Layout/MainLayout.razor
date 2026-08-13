@@ -1,0 +1,21 @@
+@inherits LayoutComponentBase
+@inject IStringLocalizer<Shared> Loc
+
+<AppHeader />
+
+<main class="app-main">
+    <div class="app-content">
+        @Body
+    </div>
+</main>
+
+<div id="blazor-error-ui" data-nosnippet>
+    @Loc["ErrorBannerMessage"]
+    <a href="." class="reload">@Loc["ErrorBannerReloadLink"]</a>
+    <button type="button"
+            class="dismiss"
+            aria-label="@Loc["ErrorBannerDismissAriaLabel"]"
+            onclick="document.getElementById('blazor-error-ui').style.display='none'">
+        <span aria-hidden="true">🗙</span>
+    </button>
+</div>

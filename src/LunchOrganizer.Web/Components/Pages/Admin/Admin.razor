@@ -1,0 +1,71 @@
+@page "/admin"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@using LunchOrganizer.Web.Components.Admin
+@inject IStringLocalizer<LunchOrganizer.Web.Resources.Admin> Loc
+
+<PageTitle>@Loc["ShellPageTitle"]</PageTitle>
+
+<div class="admin-shell">
+    <div class="admin-shell-header">
+        <h1>@Loc["ShellPageTitle"]</h1>
+        <div class="admin-shell-header-actions">
+            @if (_displayName is not null)
+            {
+                <span class="admin-shell-greeting">@Loc["ShellGreetingTemplate", _displayName]</span>
+            }
+            <form method="post" action="/admin/logout" class="admin-shell-signout-form">
+                <AntiforgeryToken />
+                <button type="submit" class="admin-shell-signout-button">@Loc["SignOutLabel"]</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="admin-shell-tabs">
+        <div role="tablist" class="admin-shell-tablist" aria-label="@Loc["ShellPageTitle"]">
+            @for (var i = 0; i < TabKeys.Length; i++)
+            {
+                var index = i;
+                <button type="button"
+                        role="tab"
+                        id="@($"admin-tab-{index}")"
+                        aria-selected="@(_activeTab == index ? "true" : "false")"
+                        aria-controls="@($"admin-tabpanel-{index}")"
+                        tabindex="@(_activeTab == index ? "0" : "-1")"
+                        class="admin-shell-tab @(_activeTab == index ? "admin-shell-tab-active" : "")"
+                        @onclick="() => _activeTab = index">
+                    @Loc[TabKeys[index]]
+                </button>
+            }
+        </div>
+
+        <div id="admin-tabpanel-0" role="tabpanel" aria-labelledby="admin-tab-0" hidden="@(_activeTab != 0)">
+            <ReportPanel />
+        </div>
+        <div id="admin-tabpanel-1" role="tabpanel" aria-labelledby="admin-tab-1" hidden="@(_activeTab != 1)">
+            <EmployeesPanel />
+        </div>
+        <div id="admin-tabpanel-2" role="tabpanel" aria-labelledby="admin-tab-2" hidden="@(_activeTab != 2)">
+            <MenusAndPricesPanel />
+        </div>
+    </div>
+</div>
+
+@code {
+    private static readonly string[] TabKeys = ["TabReport", "TabEmployees", "TabMenusAndPrices"];
+
+    private int _activeTab;
+    private string? _displayName;
+
+    [CascadingParameter]
+    public Task<AuthenticationState>? AuthStateTask { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthStateTask is not null)
+        {
+            var authState = await AuthStateTask;
+            _displayName = authState.User.FindFirst("DisplayName")?.Value;
+        }
+    }
+}

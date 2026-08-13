@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="PageTitle" xml:space="preserve">
+    <value>Réservation</value>
+  </data>
+  <data name="PageHeading" xml:space="preserve">
+    <value>Réservez votre repas</value>
+  </data>
+  <data name="PrintHeadingTemplate" xml:space="preserve">
+    <value>Réservations de repas — semaine du {0} {1}</value>
+  </data>
+  <data name="WeekSelectorThisWeek" xml:space="preserve">
+    <value>Cette semaine</value>
+  </data>
+  <data name="WeekSelectorNextWeek" xml:space="preserve">
+    <value>Semaine prochaine</value>
+  </data>
+  <data name="WeekSelectorChooseWeekAriaLabel" xml:space="preserve">
+    <value>Choisir une autre semaine</value>
+  </data>
+  <data name="WeekHeadingTemplate" xml:space="preserve">
+    <value>Semaine du {0} {1}</value>
+  </data>
+  <data name="EmployeeFieldLabel" xml:space="preserve">
+    <value>Votre nom</value>
+  </data>
+  <data name="EmployeeFieldPlaceholder" xml:space="preserve">
+    <value>Commencez à taper votre nom…</value>
+  </data>
+  <data name="EmployeeFieldMinCharsHelperTemplate" xml:space="preserve">
+    <value>Tapez au moins {0} caractères</value>
+  </data>
+  <data name="EmployeeRegisterNewConfirmTemplate" xml:space="preserve">
+    <value>Enregistrer « {0} » comme nouvel employé ?</value>
+  </data>
+  <data name="EmployeeSimilarNamesLeadIn" xml:space="preserve">
+    <value>Des noms similaires sont déjà enregistrés :</value>
+  </data>
+  <data name="EmployeeRegisterConfirmButton" xml:space="preserve">
+    <value>Oui, enregistrer</value>
+  </data>
+  <data name="EmployeeRegisterCancelButton" xml:space="preserve">
+    <value>Non, annuler</value>
+  </data>
+  <data name="EmployeeNoMatches" xml:space="preserve">
+    <value>Aucun résultat</value>
+  </data>
+  <data name="TodayStatusBookedSummaryTemplate" xml:space="preserve">
+    <value>Aujourd’hui ({0}) : {1} réservé.</value>
+  </data>
+  <data name="TodayStatusNotBookedSummaryTemplate" xml:space="preserve">
+    <value>Vous n’avez pas encore réservé de repas pour aujourd’hui ({0}).</value>
+  </data>
+  <data name="TodayStatusEditableForTemplate" xml:space="preserve">
+    <value>Vous pouvez encore modifier votre repas d’aujourd’hui pendant {0}.</value>
+  </data>
+  <data name="TodayStatusNotBookedEditableForTemplate" xml:space="preserve">
+    <value>Vous pouvez encore réserver pendant {0}.</value>
+  </data>
+  <data name="TodayStatusCutoffPassedTemplate" xml:space="preserve">
+    <value>Le repas d’aujourd’hui ({0}) ne peut plus être réservé — l’heure limite est passée.</value>
+  </data>
+  <data name="RemainingTimeLessThanMinute" xml:space="preserve">
+    <value>moins d’une minute</value>
+  </data>
+  <data name="RemainingTimeMinuteSingular" xml:space="preserve">
+    <value>1 minute</value>
+  </data>
+  <data name="RemainingTimeMinutesPluralTemplate" xml:space="preserve">
+    <value>{0} minutes</value>
+  </data>
+  <data name="RemainingTimeHourSingularWithMinutesTemplate" xml:space="preserve">
+    <value>1 heure {0} minutes</value>
+  </data>
+  <data name="RemainingTimeHoursPluralWithMinutesTemplate" xml:space="preserve">
+    <value>{0} heures {1} minutes</value>
+  </data>
+  <data name="RemainingTimeHourSingularExact" xml:space="preserve">
+    <value>1 heure</value>
+  </data>
+  <data name="RemainingTimeHoursPluralExactTemplate" xml:space="preserve">
+    <value>{0} heures</value>
+  </data>
+  <data name="GridPriceLabel" xml:space="preserve">
+    <value>Prix</value>
+  </data>
+  <data name="GridSelectedAriaLabel" xml:space="preserve">
+    <value>Sélectionné</value>
+  </data>
+  <data name="GridLockedReasonPast" xml:space="preserve">
+    <value>Passé</value>
+  </data>
+  <data name="GridLockedReasonClosedAtTemplate" xml:space="preserve">
+    <value>Fermé à {0}</value>
+  </data>
+  <data name="GridCellSelectAriaLabelTemplate" xml:space="preserve">
+    <value>{0}, Menu {1}, {2} — sélectionner</value>
+  </data>
+  <data name="ApplyMenuToWeekButtonTemplate" xml:space="preserve">
+    <value>Appliquer le menu {0} à tous les jours ouverts</value>
+  </data>
+  <data name="ApplyMenuAppliedLeadIn" xml:space="preserve">
+    <value>Appliqué à :</value>
+  </data>
+  <data name="ApplyMenuSkippedLeadIn" xml:space="preserve">
+    <value>Ignoré :</value>
+  </data>
+  <data name="ApplyMenuSkipReasonPast" xml:space="preserve">
+    <value>Passé</value>
+  </data>
+  <data name="ApplyMenuSkipReasonCutoffTemplate" xml:space="preserve">
+    <value>Fermé à {0}</value>
+  </data>
+  <data name="ApplyMenuSkipReasonNoMenuTemplate" xml:space="preserve">
+    <value>Pas de menu {0} ce jour-là</value>
+  </data>
+  <data name="SubmitButton" xml:space="preserve">
+    <value>Réserver mes repas</value>
+  </data>
+  <data name="SubmitSuccessToastTemplate" xml:space="preserve">
+    <value>Enregistré — menu {0} le {1}</value>
+  </data>
+  <data name="SubmitSuccessToastMultipleTemplate" xml:space="preserve">
+    <value>Enregistré — {0} repas réservés</value>
+  </data>
+  <data name="SubmitFailureToast" xml:space="preserve">
+    <value>Une erreur est survenue et votre réservation n’a pas été enregistrée. Veuillez réessayer.</value>
+  </data>
+  <data name="EmptyStateNoMenusThisWeek" xml:space="preserve">
+    <value>Aucun menu n’a encore été défini pour cette semaine. Un administrateur les ajoute depuis la page Admin.</value>
+  </data>
+</root>

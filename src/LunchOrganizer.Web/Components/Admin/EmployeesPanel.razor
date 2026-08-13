@@ -1,0 +1,151 @@
+@inherits LunchOrganizer.Web.Components.Shared.ViewModelComponentBase
+@using LunchOrganizer.Web.ViewModels
+@inject AdminEmployeesViewModel Vm
+@inject IStringLocalizer<LunchOrganizer.Web.Resources.Admin> Loc
+@inject IStringLocalizer<Shared> SharedLoc
+
+<div class="employees-panel">
+    <h2>@Loc["EmployeesListHeader"]</h2>
+
+    <div class="employees-toolbar">
+        <div class="employees-search">
+            <label for="employees-search">@Loc["EmployeesSearchLabel"]</label>
+            <input id="employees-search"
+                   class="employees-search-input"
+                   @bind="Vm.SearchQuery"
+                   @bind:event="oninput" />
+        </div>
+
+        @if (!Vm.IsAddFormOpen)
+        {
+            <button type="button" class="employees-button employees-button-primary" @onclick="Vm.OpenAddForm">
+                @Loc["EmployeesAddButton"]
+            </button>
+        }
+    </div>
+
+    <BusyIndicator IsBusy="Vm.IsBusy" />
+
+    @if (Vm.IsAddFormOpen)
+    {
+        <div class="employees-add-form">
+            <h3>@Loc["EmployeesAddDialogTitle"]</h3>
+
+            <div class="employees-form-field">
+                <label for="add-emp-name">@Loc["EmployeesNameLabel"]</label>
+                <input id="add-emp-name" @bind="Vm.NewEmployeeName" @bind:event="oninput" />
+            </div>
+
+            <div class="employees-form-field">
+                <label for="add-emp-email">@Loc["EmployeesEmailLabel"]</label>
+                <input id="add-emp-email" type="email" @bind="Vm.NewEmployeeEmail" @bind:event="oninput" />
+            </div>
+
+            <div class="employees-form-actions">
+                <button type="button" class="employees-button employees-button-primary" disabled="@Vm.IsBusy" @onclick="Vm.SubmitAddEmployeeAsync">
+                    @SharedLoc["ButtonAdd"]
+                </button>
+                <button type="button" class="employees-button employees-button-secondary" @onclick="Vm.CancelAddForm">
+                    @SharedLoc["ButtonCancel"]
+                </button>
+            </div>
+        </div>
+    }
+
+    @if (Vm.FilteredEmployees.Count == 0)
+    {
+        <p class="employees-empty-state">@Loc["EmployeesEmptyState"]</p>
+    }
+    else
+    {
+        <div class="employees-table-wrapper">
+            <table class="employees-table">
+                <thead>
+                    <tr>
+                        <th scope="col">@Loc["EmployeesNameLabel"]</th>
+                        <th scope="col">@Loc["EmployeesEmailLabel"]</th>
+                        <th scope="col"></th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var employee in Vm.FilteredEmployees)
+                    {
+                        @if (Vm.EditingEmployeeId == employee.Id)
+                        {
+                            <tr class="employees-row employees-row-editing">
+                                <td colspan="4">
+                                    <div class="employees-edit-form">
+                                        <h3>@Loc["EmployeesEditDialogTitle"]</h3>
+
+                                        <div class="employees-form-field">
+                                            <label for="edit-emp-name-@employee.Id">@Loc["EmployeesNameLabel"]</label>
+                                            <input id="edit-emp-name-@employee.Id" @bind="Vm.EditEmployeeName" @bind:event="oninput" />
+                                        </div>
+
+                                        <div class="employees-form-field">
+                                            <label for="edit-emp-email-@employee.Id">@Loc["EmployeesEmailLabel"]</label>
+                                            <input id="edit-emp-email-@employee.Id" type="email" @bind="Vm.EditEmployeeEmail" @bind:event="oninput" />
+                                        </div>
+
+                                        <div class="employees-form-actions">
+                                            <button type="button" class="employees-button employees-button-primary" disabled="@Vm.IsBusy" @onclick="Vm.SubmitEditEmployeeAsync">
+                                                @SharedLoc["ButtonSave"]
+                                            </button>
+                                            <button type="button" class="employees-button employees-button-secondary" @onclick="Vm.CancelEditForm">
+                                                @SharedLoc["ButtonCancel"]
+                                            </button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            <tr class="employees-row">
+                                <td>@employee.FullName</td>
+                                <td>
+                                    @if (string.IsNullOrEmpty(employee.Email))
+                                    {
+                                        <span class="employees-no-email">@Loc["EmployeesNoEmail"]</span>
+                                    }
+                                    else
+                                    {
+                                        @employee.Email
+                                    }
+                                </td>
+                                <td>
+                                    @if (employee.IsActive)
+                                    {
+                                        <span class="employees-status-badge employees-status-active">@Loc["EmployeesStatusActive"]</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="employees-status-badge employees-status-inactive">@Loc["EmployeesStatusInactive"]</span>
+                                    }
+                                </td>
+                                <td class="employees-actions-cell">
+                                    <button type="button" class="employees-button employees-button-secondary" disabled="@Vm.IsBusy" @onclick="() => Vm.OpenEditForm(employee)">
+                                        @SharedLoc["ButtonEdit"]
+                                    </button>
+                                    <button type="button" class="employees-button employees-button-destructive" disabled="@Vm.IsBusy" @onclick="() => Vm.DeleteOrDeactivateEmployeeAsync(employee)">
+                                        @SharedLoc["ButtonDelete"]
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    protected override System.ComponentModel.INotifyPropertyChanged ViewModel => Vm;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Vm.InitializeAsync();
+    }
+}

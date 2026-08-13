@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="FluentAssertions" Version="8.10.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <!-- Pins the EF Core version consumed transitively via LunchOrganizer.Data to match the version
+         LunchOrganizer.Data was actually built against (otherwise NuGet resolves an older EF Core
+         and causes a CS1705 assembly-version mismatch). Same pattern as LunchOrganizer.Web.csproj
+         and LunchOrganizer.Mailer.csproj. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\LunchOrganizer.Domain\LunchOrganizer.Domain.csproj" />
+    <ProjectReference Include="..\..\src\LunchOrganizer.Data\LunchOrganizer.Data.csproj" />
+    <ProjectReference Include="..\..\src\LunchOrganizer.Services\LunchOrganizer.Services.csproj" />
+    <ProjectReference Include="..\..\src\LunchOrganizer.Email\LunchOrganizer.Email.csproj" />
+    <ProjectReference Include="..\..\src\LunchOrganizer.Fakes\LunchOrganizer.Fakes.csproj" />
+    <ProjectReference Include="..\..\src\LunchOrganizer.Web\LunchOrganizer.Web.csproj" />
+  </ItemGroup>
+
+</Project>

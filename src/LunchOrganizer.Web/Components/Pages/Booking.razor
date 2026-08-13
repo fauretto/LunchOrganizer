@@ -1,0 +1,284 @@
+@page "/"
+@rendermode InteractiveServer
+@inherits LunchOrganizer.Web.Components.Shared.ViewModelComponentBase
+@using System.Globalization
+@using LunchOrganizer.Domain.Configuration
+@using LunchOrganizer.Domain.Enums
+@using LunchOrganizer.Services.Dtos
+@using LunchOrganizer.Web.Components.Booking
+@using LunchOrganizer.Web.Formatting
+@using LunchOrganizer.Web.ViewModels
+@using Microsoft.Extensions.Options
+@inject BookingViewModel Vm
+@inject IStringLocalizer<LunchOrganizer.Web.Resources.Booking> Loc
+@inject IStringLocalizer<Shared> SharedLoc
+@inject IOptionsMonitor<AppOptions> AppOptionsMonitor
+@inject NavigationManager Navigation
+
+<PageTitle>@Loc["PageTitle"]</PageTitle>
+
+<div class="booking-page">
+    <div class="no-print">
+        <WeekPicker CurrentWeek="Vm.CurrentWeek"
+                    SelectedWeek="Vm.SelectedWeek"
+                    OnThisWeek="Vm.GoToThisWeekAsync"
+                    OnNextWeek="Vm.GoToNextWeekAsync"
+                    OnPickDate="Vm.GoToWeekAsync" />
+    </div>
+
+    @if (WeekHeading is not null)
+    {
+        <h1 class="booking-heading">@WeekHeading</h1>
+    }
+
+    <div class="no-print">
+        <EmployeeAutocomplete Value="@Vm.EmployeeQuery"
+                              ValueChanged="(string v) => Vm.EmployeeQuery = v"
+                              Suggestions="Vm.Suggestions"
+                              OnSelect="Vm.SelectEmployeeAsync"
+                              OnDebouncedInput="Vm.OnEmployeeQueryChangedAsync"
+                              MinChars="AppOptionsMonitor.CurrentValue.AutocompleteMinChars"
+                              IsLoading="Vm.IsBusy" />
+    </div>
+
+    @if (ShowRegisterPanel)
+    {
+        <div class="register-prompt no-print">
+            <p class="register-prompt-question">@Loc["EmployeeRegisterNewConfirmTemplate", Vm.EmployeeQuery]</p>
+
+            @if (Vm.SimilarNames.Count > 0)
+            {
+                <p class="register-prompt-similar-lead-in">@Loc["EmployeeSimilarNamesLeadIn"]</p>
+                <ul class="register-prompt-similar-list">
+                    @foreach (var similar in Vm.SimilarNames)
+                    {
+                        <li>
+                            <button type="button"
+                                    class="register-prompt-similar-btn"
+                                    @onclick="() => Vm.SelectEmployeeAsync(similar)">
+                                @similar.FullName
+                            </button>
+                        </li>
+                    }
+                </ul>
+            }
+
+            <div class="register-prompt-actions">
+                <button type="button" class="register-prompt-confirm-btn" @onclick="ConfirmRegisterAsync">
+                    @Loc["EmployeeRegisterConfirmButton"]
+                </button>
+                <button type="button" class="register-prompt-cancel-btn" @onclick="CancelRegisterAsync">
+                    @Loc["EmployeeRegisterCancelButton"]
+                </button>
+            </div>
+        </div>
+    }
+
+    @if (Vm.SelectedEmployee is not null)
+    {
+        var today = Vm.TodayView;
+
+        @if (today is not null)
+        {
+            var todayLabel = today.Date.ToString("ddd d MMM", CultureInfo.CurrentCulture);
+            var isBooked = today.SelectedMenuId is not null;
+
+            <div class="today-banner @(isBooked ? "today-banner-booked" : "today-banner-unbooked")">
+                @if (isBooked)
+                {
+                    var bookedMenu = today.Menus.FirstOrDefault(m => m.Id == today.SelectedMenuId);
+                    var menuLabel = SharedLoc["MenuNumberLabelTemplate", bookedMenu?.MenuNumber ?? 0];
+
+                    <p>@Loc["TodayStatusBookedSummaryTemplate", todayLabel, menuLabel]</p>
+
+                    if (today.EditState == DayEditState.Editable && Vm.RemainingToday is not null)
+                    {
+                        <p>@Loc["TodayStatusEditableForTemplate", DurationPhraseFormatter.Format(Vm.RemainingToday.Value, Loc)]</p>
+                    }
+                    else if (today.EditState == DayEditState.LockedCutOff)
+                    {
+                        <p>@Loc["TodayStatusCutoffPassedTemplate", todayLabel]</p>
+                    }
+                }
+                else
+                {
+                    <p>@Loc["TodayStatusNotBookedSummaryTemplate", todayLabel]</p>
+
+                    if (today.EditState == DayEditState.Editable && Vm.RemainingToday is not null)
+                    {
+                        <p>@Loc["TodayStatusNotBookedEditableForTemplate", DurationPhraseFormatter.Format(Vm.RemainingToday.Value, Loc)]</p>
+                    }
+                    else if (today.EditState == DayEditState.LockedCutOff)
+                    {
+                        <p>@Loc["TodayStatusCutoffPassedTemplate", todayLabel]</p>
+                    }
+                }
+            </div>
+        }
+
+        @if (PrintHeading is not null)
+        {
+            <h2 class="print-only">@PrintHeading</h2>
+        }
+
+        <WeeklyBookingGrid Days="Vm.SelectedWeekView?.Days ?? Array.Empty<DayViewDto>()"
+                           PendingSelections="Vm.PendingSelections"
+                           OnCellClick="HandleCellClick"
+                           Currency="@AppOptionsMonitor.CurrentValue.Currency"
+                           CutOffTime="AppOptionsMonitor.CurrentValue.BookingCutOffLocalTime" />
+
+        @if (Vm.SelectedWeekView is not null)
+        {
+            <div class="whole-week-shortcut no-print">
+                <select class="whole-week-select" @bind="Vm.WholeWeekMenuNumber">
+                    @foreach (var n in Vm.AvailableMenuNumbersForWeek)
+                    {
+                        <option value="@n">@SharedLoc["MenuNumberLabelTemplate", n]</option>
+                    }
+                </select>
+
+                <button type="button"
+                        class="whole-week-apply-btn"
+                        disabled="@(Vm.IsBusy || Vm.SelectedEmployee is null || Vm.SelectedWeekView is null || Vm.WholeWeekMenuNumber is null)"
+                        @onclick="Vm.ApplyMenuToWeekAsync">
+                    @Loc["ApplyMenuToWeekButtonTemplate", Vm.WholeWeekMenuNumber ?? 0]
+                </button>
+
+                @if (Vm.LastWholeWeekResult is not null)
+                {
+                    <div class="whole-week-result">
+                        <p class="whole-week-result-lead-in">@Loc["ApplyMenuAppliedLeadIn"]</p>
+                        <ul class="whole-week-result-list">
+                            @foreach (var date in Vm.LastWholeWeekResult.AppliedDates)
+                            {
+                                <li>@date.ToString("ddd d MMM", CultureInfo.CurrentCulture)</li>
+                            }
+                        </ul>
+
+                        @if (Vm.SkippedDaysWithLocalizedReasons.Count > 0)
+                        {
+                            <p class="whole-week-result-lead-in">@Loc["ApplyMenuSkippedLeadIn"]</p>
+                            <ul class="whole-week-result-list">
+                                @foreach (var skipped in Vm.SkippedDaysWithLocalizedReasons)
+                                {
+                                    <li>@skipped.Date.ToString("ddd d MMM", CultureInfo.CurrentCulture) — @skipped.LocalizedReason</li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+        <div class="submit-row no-print">
+            <button type="button" class="submit-button" disabled="@Vm.IsBusy" @onclick="Vm.SaveAsync">
+                @Loc["SubmitButton"]
+            </button>
+            <BusyIndicator IsBusy="Vm.IsBusy" />
+        </div>
+    }
+</div>
+
+@code {
+    protected override System.ComponentModel.INotifyPropertyChanged ViewModel => Vm;
+
+    [SupplyParameterFromQuery(Name = "week")] public string? WeekParam { get; set; }
+    [SupplyParameterFromQuery(Name = "employee")] public string? EmployeeParam { get; set; }
+
+    private DateOnly? ParsedWeek =>
+        DateOnly.TryParseExact(WeekParam, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var d)
+            ? d
+            : null;
+
+    // EmployeeParam is intentionally a string?, not an int?, and this parses it by hand. If
+    // [SupplyParameterFromQuery] bound directly to an int? property, Blazor would throw
+    // InvalidOperationException whenever it can't convert the raw query value to that type — and that
+    // throw happens during render, surfacing to the user as an HTTP 500. A malformed, truncated, or
+    // stale URL (e.g. ?employee=abc) would crash the page instead of just showing no employee selected.
+    // Parsing from a string? here lets an unparseable value degrade gracefully to null. Do not "simplify"
+    // EmployeeParam back to int? — that reintroduces this crash.
+    private int? ParsedEmployeeId =>
+        int.TryParse(EmployeeParam, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id)
+            ? id
+            : null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Vm.InitializeAsync(ParsedWeek, ParsedEmployeeId);
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        var target = Navigation.GetUriWithQueryParameters(new Dictionary<string, object?>
+        {
+            ["week"] = Vm.SelectedWeek is null ? null : Vm.SelectedWeek.Monday.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            ["employee"] = Vm.SelectedEmployee?.Id
+        });
+
+        // Guard against an infinite render loop: NavigateTo triggers a re-render, which re-enters this
+        // method. Comparing the computed target against the current URI *before* navigating means the
+        // second pass finds them equal and stops — without this check, every render would trigger another
+        // NavigateTo, which triggers another render, forever. Do not remove this as "redundant": it is the
+        // only thing standing between this method and an infinite loop.
+        if (!string.Equals(target, Navigation.Uri, StringComparison.Ordinal))
+        {
+            // Deliberately NavigationManager.NavigateTo(..., replace: true), never a JS
+            // history.replaceState call: only NavigationManager's own navigation updates
+            // NavigationManager.Uri, and AppHeader.razor reads Navigation.Uri directly to build its
+            // reload target on language switch. A raw history.replaceState would change the browser's
+            // address bar but leave Navigation.Uri stale, silently defeating this whole feature.
+            // replace: true avoids polluting browser back-history with every intermediate
+            // week/employee change.
+            Navigation.NavigateTo(target, replace: true);
+        }
+    }
+
+    private string? WeekHeading
+    {
+        get
+        {
+            if (Vm.SelectedWeek is null)
+            {
+                return null;
+            }
+
+            var monday = Vm.SelectedWeek.Monday;
+            return Loc["WeekHeadingTemplate", monday.ToString("dddd", CultureInfo.CurrentCulture), monday.ToString("d MMMM", CultureInfo.CurrentCulture)];
+        }
+    }
+
+    private string? PrintHeading
+    {
+        get
+        {
+            if (Vm.SelectedWeek is null)
+            {
+                return null;
+            }
+
+            var monday = Vm.SelectedWeek.Monday;
+            return Loc["PrintHeadingTemplate", monday.ToString("dddd", CultureInfo.CurrentCulture), monday.ToString("d MMMM", CultureInfo.CurrentCulture)];
+        }
+    }
+
+    private bool ShowRegisterPanel =>
+        Vm.ShowRegisterPrompt
+        && !Vm.Suggestions.Any(s => string.Equals(s.FullName, Vm.EmployeeQuery, StringComparison.OrdinalIgnoreCase))
+        && Vm.EmployeeQuery.Length >= AppOptionsMonitor.CurrentValue.AutocompleteMinChars;
+
+    private async Task ConfirmRegisterAsync()
+    {
+        await Vm.RegisterNewEmployeeAsync(Vm.EmployeeQuery);
+    }
+
+    private async Task CancelRegisterAsync()
+    {
+        // ShowRegisterPrompt has no public setter — clearing the query and re-running the normal
+        // query-changed path is the sanctioned way to reset Suggestions/SimilarNames/ShowRegisterPrompt
+        // consistently through the view model's own logic.
+        Vm.EmployeeQuery = string.Empty;
+        await Vm.OnEmployeeQueryChangedAsync(string.Empty);
+    }
+
+    private void HandleCellClick((DateOnly Date, int MenuId) cell) => Vm.SetPendingSelection(cell.Date, cell.MenuId);
+}

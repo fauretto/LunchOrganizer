@@ -1,0 +1,42 @@
+@page "/admin/login"
+@layout LunchOrganizer.Web.Components.Layout.AdminAuthLayout
+@inject IStringLocalizer<LunchOrganizer.Web.Resources.Admin> Loc
+
+<h1>@Loc["LoginTitle"]</h1>
+
+@if (Error == "invalid")
+{
+    <p class="admin-login-message admin-login-message-destructive">@Loc["LoginInvalidCredentials"]</p>
+}
+else if (Error == "ratelimited")
+{
+    <p class="admin-login-message admin-login-message-warning">@Loc["LoginRateLimited"]</p>
+}
+
+<form method="post" action="/admin/login" class="admin-login-form">
+    <AntiforgeryToken />
+    @if (!string.IsNullOrEmpty(ReturnUrl))
+    {
+        <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+    }
+
+    <div class="admin-login-field">
+        <label for="admin-login-username">@Loc["LoginUsernameLabel"]</label>
+        <input id="admin-login-username" type="text" name="username" autocomplete="username" required />
+    </div>
+
+    <div class="admin-login-field">
+        <label for="admin-login-password">@Loc["LoginPasswordLabel"]</label>
+        <input id="admin-login-password" type="password" name="password" autocomplete="current-password" required />
+    </div>
+
+    <button type="submit" class="admin-login-submit">@Loc["LoginSubmitButton"]</button>
+</form>
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? Error { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? ReturnUrl { get; set; }
+}

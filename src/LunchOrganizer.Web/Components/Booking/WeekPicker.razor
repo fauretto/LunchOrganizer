@@ -1,0 +1,96 @@
+@using System.Globalization
+@using LunchOrganizer.Services.Dtos
+@inject IStringLocalizer<Booking> Loc
+
+<div class="week-picker">
+    <button type="button"
+            class="week-picker-btn week-picker-btn-primary @(IsThisWeekActive ? "week-picker-btn-active" : string.Empty)"
+            aria-pressed="@(IsThisWeekActive ? "true" : "false")"
+            @onclick="OnThisWeek">
+        @Loc["WeekSelectorThisWeek"]
+    </button>
+
+    <button type="button"
+            class="week-picker-btn week-picker-btn-primary @(IsNextWeekActive ? "week-picker-btn-active" : string.Empty)"
+            aria-pressed="@(IsNextWeekActive ? "true" : "false")"
+            @onclick="OnNextWeek">
+        @Loc["WeekSelectorNextWeek"]
+    </button>
+
+    @if (ShowBackStep)
+    {
+        <button type="button" class="week-picker-btn week-picker-btn-secondary" @onclick="HandleBackStep">
+            <span aria-hidden="true">&lsaquo;</span>
+        </button>
+    }
+
+    <button type="button" class="week-picker-btn week-picker-btn-secondary" @onclick="HandleForwardStep">
+        <span aria-hidden="true">&rsaquo;</span>
+    </button>
+
+    <input type="date"
+           class="week-picker-date"
+           min="@MinDateValue"
+           aria-label="@Loc["WeekSelectorChooseWeekAriaLabel"]"
+           @onchange="HandleDateChanged" />
+</div>
+
+@code {
+    [Parameter]
+    public WeekIdentifier? CurrentWeek { get; set; }
+
+    [Parameter]
+    public WeekIdentifier? SelectedWeek { get; set; }
+
+    [Parameter]
+    public EventCallback OnThisWeek { get; set; }
+
+    [Parameter]
+    public EventCallback OnNextWeek { get; set; }
+
+    [Parameter]
+    public EventCallback<DateOnly> OnPickDate { get; set; }
+
+    private bool IsThisWeekActive =>
+        SelectedWeek is not null && CurrentWeek is not null && SelectedWeek.Monday == CurrentWeek.Monday;
+
+    private bool IsNextWeekActive =>
+        SelectedWeek is not null && CurrentWeek is not null && SelectedWeek.Monday == CurrentWeek.Monday.AddDays(7);
+
+    private bool ShowBackStep =>
+        SelectedWeek is not null && CurrentWeek is not null && SelectedWeek.Monday > CurrentWeek.Monday;
+
+    private string? MinDateValue => CurrentWeek?.Monday.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+    private Task HandleForwardStep()
+    {
+        if (SelectedWeek is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        return OnPickDate.InvokeAsync(SelectedWeek.Monday.AddDays(7));
+    }
+
+    private Task HandleBackStep()
+    {
+        if (SelectedWeek is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        return OnPickDate.InvokeAsync(SelectedWeek.Monday.AddDays(-7));
+    }
+
+    private Task HandleDateChanged(ChangeEventArgs e)
+    {
+        // HTML date inputs always emit ISO yyyy-MM-dd regardless of display culture.
+        if (e.Value is string text &&
+            DateOnly.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed))
+        {
+            return OnPickDate.InvokeAsync(parsed);
+        }
+
+        return Task.CompletedTask;
+    }
+}

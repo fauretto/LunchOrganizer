@@ -1,0 +1,78 @@
+@using System.Globalization
+@using LunchOrganizer.Web.Formatting
+@inject IStringLocalizer<LunchOrganizer.Web.Resources.Admin> Loc
+
+<div class="price-editor">
+    <span class="price-editor-label">@Loc["MenusDayPriceLabel"]</span>
+
+    @if (_isEditing)
+    {
+        <input type="text"
+               class="price-editor-input"
+               @bind="_editText"
+               @bind:event="oninput"
+               @onblur="HandleBlurAsync" />
+
+        @if (_showInvalid)
+        {
+            <span class="price-editor-invalid">@Loc["MenusInvalidPrice"]</span>
+        }
+    }
+    else
+    {
+        <button type="button" class="price-editor-value" @onclick="EnterEditMode" @onfocus="EnterEditMode">
+            @PriceFormatter.Format(Price, Currency, CultureInfo.CurrentCulture)
+        </button>
+    }
+
+    <button type="button" class="price-editor-apply-button" @onclick="() => OnApplyToWeek.InvokeAsync()">
+        @Loc["MenusApplyPriceToWeekButton"]
+    </button>
+</div>
+
+@code {
+    [Parameter]
+    public decimal Price { get; set; }
+
+    [Parameter]
+    public string Currency { get; set; } = "CHF";
+
+    [Parameter]
+    public EventCallback<decimal> OnSave { get; set; }
+
+    [Parameter]
+    public EventCallback OnApplyToWeek { get; set; }
+
+    // Deliberate, accepted exception to the "everything meaningful lives on the ViewModel" rule
+    // (plan §6.6): this in-progress editing buffer is a short-lived, promptly-committed (on blur)
+    // control. Losing an un-blurred edit on a rare mid-edit language switch is a minor acceptable
+    // risk, not silent loss of anything already persisted.
+    private bool _isEditing;
+    private string _editText = string.Empty;
+    private bool _showInvalid;
+
+    private void EnterEditMode()
+    {
+        if (_isEditing)
+        {
+            return;
+        }
+
+        _editText = Price.ToString("0.00", CultureInfo.CurrentCulture);
+        _showInvalid = false;
+        _isEditing = true;
+    }
+
+    private async Task HandleBlurAsync()
+    {
+        if (!PriceParser.TryParse(_editText, out var parsed))
+        {
+            _showInvalid = true;
+            return;
+        }
+
+        _showInvalid = false;
+        _isEditing = false;
+        await OnSave.InvokeAsync(parsed);
+    }
+}

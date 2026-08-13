@@ -1,0 +1,104 @@
+@inherits LunchOrganizer.Web.Components.Shared.ViewModelComponentBase
+@using System.Globalization
+@using LunchOrganizer.Web.Formatting
+@using LunchOrganizer.Web.ViewModels
+@using Microsoft.Extensions.Options
+@inject ReportViewModel Vm
+@inject IStringLocalizer<LunchOrganizer.Web.Resources.Admin> Loc
+@inject IOptionsMonitor<LunchOrganizer.Domain.Configuration.AppOptions> AppOptionsMonitor
+
+<div class="report-panel">
+    <div class="report-filters no-print">
+        <div class="report-filter">
+            <label for="report-employee-filter">@Loc["ReportEmployeeFilterLabel"]</label>
+            <select id="report-employee-filter"
+                    class="report-filter-input"
+                    @bind="Vm.SelectedEmployeeId"
+                    @bind:after="Vm.ReloadReportAsync">
+                <option value="">@Loc["ReportAllEmployeesOption"]</option>
+                @foreach (var e in Vm.Employees)
+                {
+                    <option value="@e.Id">@e.FullName</option>
+                }
+            </select>
+        </div>
+
+        <div class="report-filter">
+            <label for="report-from-date">@Loc["ReportStartDateLabel"]</label>
+            <input id="report-from-date"
+                   type="date"
+                   class="report-filter-input"
+                   @bind="Vm.From"
+                   @bind:after="Vm.ReloadReportAsync" />
+        </div>
+
+        <div class="report-filter">
+            <label for="report-to-date">@Loc["ReportEndDateLabel"]</label>
+            <input id="report-to-date"
+                   type="date"
+                   class="report-filter-input"
+                   @bind="Vm.To"
+                   @bind:after="Vm.ReloadReportAsync" />
+        </div>
+    </div>
+
+    <BusyIndicator IsBusy="Vm.IsBusy" />
+
+    @if (Vm.Report is not null)
+    {
+        <h2 class="print-only">@Loc["ReportPrintHeading"]</h2>
+
+        @if (Vm.Report.Lines.Count == 0)
+        {
+            <p class="report-empty-state">@Loc["ReportEmptyState"]</p>
+        }
+        else
+        {
+            <div class="report-table-wrapper">
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">@Loc["ReportColumnDate"]</th>
+                            <th scope="col">@Loc["ReportColumnEmployee"]</th>
+                            <th scope="col">@Loc["ReportColumnDay"]</th>
+                            <th scope="col">@Loc["ReportColumnMenu"]</th>
+                            <th scope="col">@Loc["ReportColumnDescription"]</th>
+                            <th scope="col">@Loc["ReportColumnPrice"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var line in Vm.Report.Lines)
+                        {
+                            <tr>
+                                <td>@line.Date.ToString("d", CultureInfo.CurrentCulture)</td>
+                                <td>@line.EmployeeName</td>
+                                <td>@line.Date.ToString("dddd", CultureInfo.CurrentCulture)</td>
+                                <td>@line.MenuNumber</td>
+                                <td>@(line.MenuDescription ?? "")</td>
+                                <td>@PriceFormatter.Format(line.Price, AppOptionsMonitor.CurrentValue.Currency, CultureInfo.CurrentCulture)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="report-total-card">
+                <span class="report-total-label">@Loc["ReportPeriodTotalLabel"]</span>
+                <span class="report-total-value">@PriceFormatter.Format(Vm.Report.Total, AppOptionsMonitor.CurrentValue.Currency, CultureInfo.CurrentCulture)</span>
+            </div>
+
+            <div class="no-print">
+                <a class="report-export-link" href="@Vm.ExportCsvUrl">@Loc["ReportExportCsvButton"]</a>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    protected override System.ComponentModel.INotifyPropertyChanged ViewModel => Vm;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Vm.InitializeAsync();
+    }
+}

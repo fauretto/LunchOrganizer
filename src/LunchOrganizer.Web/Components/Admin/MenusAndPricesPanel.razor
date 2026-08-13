@@ -1,0 +1,96 @@
+@inherits LunchOrganizer.Web.Components.Shared.ViewModelComponentBase
+@using System.Globalization
+@using LunchOrganizer.Services.Dtos
+@using LunchOrganizer.Web.Components.Booking
+@using LunchOrganizer.Web.ViewModels
+@using Microsoft.Extensions.Options
+@inject AdminMenusViewModel Vm
+@inject IStringLocalizer<LunchOrganizer.Web.Resources.Admin> Loc
+@inject IStringLocalizer<LunchOrganizer.Web.Resources.Booking> BookingLoc
+@inject IOptionsMonitor<LunchOrganizer.Domain.Configuration.AppOptions> AppOptionsMonitor
+
+<div class="menus-panel">
+    <div class="no-print">
+        <WeekPicker CurrentWeek="Vm.CurrentWeek"
+                    SelectedWeek="Vm.SelectedWeek"
+                    OnThisWeek="Vm.GoToThisWeekAsync"
+                    OnNextWeek="Vm.GoToNextWeekAsync"
+                    OnPickDate="Vm.GoToWeekAsync" />
+    </div>
+
+    @if (WeekHeading is not null)
+    {
+        <h2 class="menus-panel-heading">@WeekHeading</h2>
+    }
+
+    <p class="menus-panel-note">@Loc["MenusWeekSelectorNote"]</p>
+
+    <BusyIndicator IsBusy="Vm.IsBusy" />
+
+    @foreach (var date in Vm.WorkingDays)
+    {
+        <section class="menus-day-section">
+            <h3 class="menus-day-heading">@date.ToString("dddd d MMMM", CultureInfo.CurrentCulture)</h3>
+
+            <PriceEditor Price="Vm.GetPriceFor(date)"
+                         Currency="AppOptionsMonitor.CurrentValue.Currency"
+                         OnSave="(decimal p) => Vm.SetPriceAsync(date, p)"
+                         OnApplyToWeek="() => Vm.ApplyPriceToWeekAsync(date)" />
+
+            <div class="menus-day-cards">
+                @foreach (var menu in Vm.GetMenusFor(date))
+                {
+                    <MenuCard Menu="menu"
+                              CanDelete="Vm.CanDeleteMenu(menu)"
+                              IsPastDate="Vm.IsMenuDateInPast(menu)"
+                              OnUpdateDescription="(args) => Vm.UpdateMenuDescriptionAsync(args.MenuId, args.Description)"
+                              OnDelete="(id) => Vm.DeleteMenuAsync(menu)"
+                              OnCopyToWeek="(id) => Vm.CopyDescriptionToWeekAsync(id)" />
+                }
+            </div>
+
+            @if (Vm.GetMenusFor(date).Count < Vm.GetMaxMenusPerDay())
+            {
+                <div class="menus-add-form">
+                    <div class="menus-add-field">
+                        <label for="new-menu-@date.ToString("yyyyMMdd")">@Loc["MenusDescriptionLabel"]</label>
+                        <input id="new-menu-@date.ToString("yyyyMMdd")"
+                               class="menus-add-input"
+                               placeholder="@Loc["MenusDescriptionPlaceholder"]"
+                               @bind:get="Vm.GetNewMenuDraft(date)"
+                               @bind:set="(string? v) => Vm.SetNewMenuDraft(date, v ?? string.Empty)" />
+                    </div>
+
+                    <button type="button" class="menus-add-button" disabled="@Vm.IsBusy" @onclick="() => Vm.AddMenuAsync(date)">
+                        @Loc["MenusAddButton"]
+                    </button>
+                </div>
+            }
+        </section>
+    }
+</div>
+
+@code {
+    protected override System.ComponentModel.INotifyPropertyChanged ViewModel => Vm;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Vm.InitializeAsync();
+    }
+
+    // Reuses Booking:WeekHeadingTemplate rather than duplicating an identical "Week of {0} {1}"
+    // key under a new Admin: name — see final report for the rationale.
+    private string? WeekHeading
+    {
+        get
+        {
+            if (Vm.SelectedWeek is null)
+            {
+                return null;
+            }
+
+            var monday = Vm.SelectedWeek.Monday;
+            return BookingLoc["WeekHeadingTemplate", monday.ToString("dddd", CultureInfo.CurrentCulture), monday.ToString("d MMMM", CultureInfo.CurrentCulture)];
+        }
+    }
+}

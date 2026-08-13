@@ -1,0 +1,133 @@
+.report-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.print-only {
+    display: none;
+}
+
+.report-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-4);
+}
+
+.report-filter {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.report-filter label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-neutral-700);
+}
+
+.report-filter-input {
+    min-height: var(--min-target);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    border: var(--border-width) solid var(--color-neutral-300);
+    background: var(--color-surface);
+    color: var(--color-neutral-900);
+}
+
+.report-empty-state {
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--color-neutral-100);
+    color: var(--color-neutral-700);
+}
+
+.report-table-wrapper {
+    overflow-x: auto;
+}
+
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.report-table th,
+.report-table td {
+    text-align: left;
+    padding: var(--space-2) var(--space-3);
+    border-bottom: var(--border-width) solid var(--color-neutral-300);
+}
+
+.report-table th {
+    font-weight: var(--font-weight-bold);
+    color: var(--color-neutral-900);
+}
+
+.report-table td {
+    color: var(--color-neutral-900);
+}
+
+.report-total-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--color-primary-100);
+    border: var(--border-width) solid var(--color-primary-700);
+    max-width: 24rem;
+}
+
+.report-total-label {
+    font-weight: var(--font-weight-medium);
+    color: var(--color-primary-900);
+}
+
+.report-total-value {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary-900);
+}
+
+.report-export-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--min-target);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
+    border: var(--border-width) solid var(--color-primary-700);
+    background: var(--color-surface);
+    color: var(--color-primary-700);
+    font-weight: var(--font-weight-medium);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+
+    .print-only {
+        display: block;
+    }
+
+    .report-table th,
+    .report-table td {
+        border: var(--border-width) solid var(--color-neutral-900);
+    }
+
+    .report-total-card {
+        background: var(--color-surface) !important;
+        color: var(--color-neutral-900) !important;
+        border: var(--border-width) solid var(--color-neutral-900);
+    }
+
+    .report-total-label,
+    .report-total-value {
+        color: var(--color-neutral-900) !important;
+    }
+}

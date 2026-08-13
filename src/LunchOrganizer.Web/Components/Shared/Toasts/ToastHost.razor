@@ -1,0 +1,45 @@
+@rendermode InteractiveServer
+@implements IDisposable
+@inject IToastService ToastService
+@inject IStringLocalizer<Shared> Loc
+
+<div class="toast-stack" role="status" aria-live="polite">
+    @foreach (var toast in ToastService.Toasts)
+    {
+        <div class="toast-item toast-item-@toast.Kind.ToString().ToLowerInvariant()"
+             role="@(toast.Kind == ToastKind.Error ? "alert" : "status")"
+             aria-live="@(toast.Kind == ToastKind.Error ? "assertive" : "polite")">
+            <div class="toast-content">
+                <p class="toast-title">@GetTitle(toast.Kind)</p>
+                <p class="toast-text">@toast.Text</p>
+            </div>
+            <button type="button"
+                    class="toast-close"
+                    aria-label="@Loc["ToastCloseAriaLabel"]"
+                    @onclick="() => ToastService.Dismiss(toast.Id)">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        ToastService.Changed += HandleChanged;
+    }
+
+    private void HandleChanged() => InvokeAsync(StateHasChanged);
+
+    private string GetTitle(ToastKind kind) => kind switch
+    {
+        ToastKind.Success => Loc["ToastTitleSuccess"],
+        ToastKind.Error => Loc["ToastTitleError"],
+        _ => Loc["ToastTitleInfo"],
+    };
+
+    public void Dispose()
+    {
+        ToastService.Changed -= HandleChanged;
+    }
+}

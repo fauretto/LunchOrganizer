@@ -1,0 +1,33 @@
+.busy-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-neutral-700);
+    font-size: var(--font-size-sm);
+}
+
+.busy-spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid var(--color-primary-100);
+    border-top-color: var(--color-primary-500);
+    border-radius: 50%;
+    animation: busy-spin 0.8s linear infinite;
+}
+
+.busy-label {
+    white-space: nowrap;
+}
+
+@keyframes busy-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .busy-spinner {
+        animation: none;
+    }
+}
