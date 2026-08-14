@@ -99,9 +99,18 @@ public sealed class EmployeeRepository(IDbContextFactory<LunchOrganizerDbContext
     public async Task DeleteAsync(int id, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
-        var stub = new Employee { Id = id };
-        db.Employees.Attach(stub);
-        db.Employees.Remove(stub);
+
+        // Load the tracked entity so its concurrency token (the PostgreSQL xmin system column,
+        // mapped via IsRowVersion) is populated. Removing a bare stub would send xmin = 0 in the
+        // DELETE's WHERE clause, match no rows, and raise DbUpdateConcurrencyException while leaving
+        // the employee undeleted.
+        var employee = await db.Employees.SingleOrDefaultAsync(e => e.Id == id, ct);
+        if (employee is null)
+        {
+            return;
+        }
+
+        db.Employees.Remove(employee);
 
         try
         {

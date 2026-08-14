@@ -33,7 +33,7 @@
             <h3 class="menus-day-heading">@date.ToString("dddd d MMMM", CultureInfo.CurrentCulture)</h3>
 
             <PriceEditor Price="Vm.GetPriceFor(date)"
-                         Currency="AppOptionsMonitor.CurrentValue.Currency"
+                         Currency="@AppOptionsMonitor.CurrentValue.Currency"
                          OnSave="(decimal p) => Vm.SetPriceAsync(date, p)"
                          OnApplyToWeek="() => Vm.ApplyPriceToWeekAsync(date)" />
 
