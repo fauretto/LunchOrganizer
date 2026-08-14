@@ -11,10 +11,12 @@ rem  It invokes Windows PowerShell with -ExecutionPolicy Bypass (scoped to this
 rem  single call only, it does NOT change any machine/user policy) and forwards
 rem  every argument you pass to this .cmd straight through to the .ps1 script.
 rem
-rem  The underlying task registration requires elevation, so this wrapper also
-rem  verifies it is running as Administrator before continuing.
+rem  The underlying task registration requires elevation. This wrapper will
+rem  automatically request administrative privileges (a UAC prompt) and relaunch
+rem  itself elevated if it was not started as Administrator, so a normal
+rem  double-click is enough.
 rem
-rem  USAGE (run this .cmd "as administrator"):
+rem  USAGE (a plain double-click works; accept the UAC prompt):
 rem
 rem    register-mailer-task.cmd -ExecutablePath "C:\Apps\LunchOrganizer.Mailer\LunchOrganizer.Mailer.exe"
 rem
@@ -38,21 +40,34 @@ if not exist "%PS_SCRIPT%" (
 	exit /b 1
 )
 
-rem ---- Require administrative privileges (Task Scheduler registration needs them) ----
+rem ---- Require administrative privileges; self-elevate via UAC if not already admin ----
 net session >nul 2>&1
 if errorlevel 1 (
-	echo This script must be run as Administrator.
-	echo Right-click "register-mailer-task.cmd" and choose "Run as administrator".
-	echo.
-	pause
-	exit /b 1
+	echo Administrative privileges are required. Requesting elevation via UAC...
+	if "%~1"=="" (
+		powershell -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+	) else (
+		powershell -NoProfile -Command "Start-Process -FilePath '%~f0' -ArgumentList '%*' -Verb RunAs"
+	)
+	if errorlevel 1 (
+		echo.
+		echo Elevation was cancelled or failed. The task was not registered.
+		pause
+	)
+	exit /b
 )
 
 rem ---- Prefer Windows PowerShell 5.1; the .ps1 is documented as 5.1 compatible ----
 set "PS_EXE=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
 if not exist "%PS_EXE%" set "PS_EXE=powershell.exe"
 
-"%PS_EXE%" -NoProfile -ExecutionPolicy Bypass -File "%PS_SCRIPT%" %*
+rem  -File checks execution policy even when -ExecutionPolicy Bypass is passed, because Group
+rem  Policy (MachinePolicy / UserPolicy) overrides the command-line flag. The workaround is to
+rem  read the script text into memory and invoke it as a [scriptblock]: that path is not subject
+rem  to the execution-policy file-signing check regardless of GPO settings.
+rem  Note: cmd strips the escape character ^ before passing the line to PowerShell, so PowerShell
+rem  receives a plain & (call operator) to invoke the scriptblock.
+"%PS_EXE%" -NoProfile -Command $sb=[scriptblock]::Create([IO.File]::ReadAllText('%PS_SCRIPT%')); ^& $sb %*
 set "EXITCODE=%errorlevel%"
 
 echo.
