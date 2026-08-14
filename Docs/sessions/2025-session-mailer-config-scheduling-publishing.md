@@ -155,18 +155,57 @@ runtime.
 
 ---
 
-## Files Created This Session
+## Files Created / Changed This Session
 
 | File | Purpose |
 |------|---------|
-| `Scripts/publish-production.ps1` | Publishes Web + Mailer (Release) into `<OutputRoot>\Web` and `<OutputRoot>\Mailer`. Params: `-OutputRoot` (default `<repo>\publish`), `-Configuration` (default Release), `-SelfContained`, `-Runtime` (default win-x64), `-Clean`. |
-| `Scripts/publish-production.cmd` | Wrapper that runs the `.ps1` via `powershell -NoProfile -ExecutionPolicy Bypass -File …`, forwarding args (`%*`). Scoped bypass for locked-down laptops; no system policy change. |
+| `Scripts/publish-production.cmd` | **Self-contained batch publisher** (final form). Runs `dotnet publish -c Release` directly for Web then Mailer — no PowerShell involved. Parses `-OutputRoot` (default `<repo>\publish`), `-Configuration` (default Release), `-SelfContained`, `-Runtime` (default win-x64), `-Clean`. Verified working via `cmd /c`. |
+| `Docs/INSTALLATIONFORDUMMIES.md` | Beginner-friendly server installation guide (see section below). |
+| `src/LunchOrganizer.Web/Components/Admin/MenusAndPricesPanel.razor` | **Bug fix** — added missing `@` to `Currency="@AppOptionsMonitor.CurrentValue.Currency"` (was rendering the literal expression text next to the price). |
+| `README.md` (repo root) | New top-level README with a **Deployment** pointer to the installation guide. |
+
+**Removed:** `Scripts/publish-production.ps1` — the `.cmd` no longer wraps a `.ps1`; it was
+deleted to avoid confusion.
+
+### Why the `.cmd` was rewritten (execution-policy discovery)
+The original `.cmd` wrapped `publish-production.ps1` with `-ExecutionPolicy Bypass`. On this
+machine that **failed**: PowerShell execution policy is enforced by **Group Policy**
+(`AllSigned`-style), which the command-line `-ExecutionPolicy Bypass` switch **cannot
+override** (it demands a digitally signed script). The fix was to make the `.cmd` fully
+self-contained — calling `dotnet publish` directly — so it works under locked-down policy.
+Note: `register-mailer-task.ps1` still requires PowerShell (Task Scheduler cmdlets) and is
+subject to the same policy on locked-down machines.
 
 Default output (no `-OutputRoot`):
 ```
 D:\Data\GitPerso\LunchOrganizer\publish\Web\
 D:\Data\GitPerso\LunchOrganizer\publish\Mailer\
 ```
+
+---
+
+## Server Installation Guide (`Docs/INSTALLATIONFORDUMMIES.md`)
+
+A step-by-step, beginner-friendly deployment guide was written and saved. Key points:
+
+- **Concept:** a published ASP.NET Core app is not static HTML dropped in a web root — it
+  must be **hosted** by a process. The app folder can live anywhere (e.g.
+  `C:\Apps\LunchOrganizer.Web`); a host makes it browser-reachable.
+- **Prerequisites:** PostgreSQL; **.NET 10 Hosting Bundle**; restart IIS after installing it.
+- **Copy** the two publish folders to separate server directories.
+- **Configure** `config\database.json` (Web `AutoCreateDatabase=true`, Mailer `false`),
+  `email.json`, `admin-users.json`.
+- **Option A — IIS (recommended):** App Pool = "No Managed Code", site → physical path =
+  Web folder, bindings (HTTP/HTTPS), folder permissions for `IIS AppPool\...`. The app
+  forces HTTPS (`UseHttpsRedirection`), so a valid certificate is needed.
+- **Option B — Windows Service (Kestrel, no IIS):** create a service with `sc.exe` pointing
+  at `dotnet.exe <dll>` (or the exe if self-contained), set `ASPNETCORE_URLS` /
+  `ASPNETCORE_ENVIRONMENT=Production`, grant folder access, open the firewall port. Includes
+  start/stop/delete and troubleshooting.
+- **Mailer (both options):** test with `--dry-run`, then register the Task Scheduler job via
+  `register-mailer-task.ps1`.
+- App facts referenced: `web.config` hosting model `inprocess`; DB bootstrap on startup;
+  `app.json` currency `CHF` / culture `fr-CH` / cut-off `09:00`; admin login `/admin/login`.
 
 ---
 
@@ -186,5 +225,6 @@ D:\Data\GitPerso\LunchOrganizer\publish\Mailer\
 ## Open / Optional Follow-ups
 
 - Add `publish/` to `.gitignore` so build output isn't committed.
-- Optionally add a `register-mailer-task.cmd` wrapper (elevated) for the server side.
+- Optionally add a `register-mailer-task.cmd` wrapper (elevated) for the server side — note
+  Task Scheduler cmdlets still require PowerShell, so a pure `.cmd` would call `schtasks.exe`.
 - Revert throwaway PickupDirectory test values in `config/email.json` before committing.

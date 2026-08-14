@@ -4,3 +4,4 @@ obj/
 *.user
 config/*.local.json
 mail-drop/
+/publish
