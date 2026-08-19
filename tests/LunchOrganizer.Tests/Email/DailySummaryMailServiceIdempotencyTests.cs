@@ -2,6 +2,7 @@ using FluentAssertions;
 using LunchOrganizer.Domain.Configuration;
 using LunchOrganizer.Domain.Enums;
 using LunchOrganizer.Email;
+using LunchOrganizer.Email.Abstractions;
 using LunchOrganizer.Email.InMemory;
 using LunchOrganizer.Email.Rendering;
 using LunchOrganizer.Email.Sending;
@@ -21,7 +22,8 @@ public class DailySummaryMailServiceIdempotencyTests
         out InMemoryEmailLogRepository logRepo,
         EmailOptions options,
         FakeClock clock,
-        InMemoryBookingRepository bookingRepo)
+        InMemoryBookingRepository bookingRepo,
+        IEmployeeConfirmationSender? confirmationSender = null)
     {
         var optionsMonitor = new TestOptionsMonitor<EmailOptions>(options);
         var builder = new DailySummaryBuilder(bookingRepo, optionsMonitor, clock);
@@ -36,6 +38,7 @@ public class DailySummaryMailServiceIdempotencyTests
             fakeSender,
             previewSender,
             logRepo,
+            confirmationSender ?? new FakeEmployeeConfirmationSender(),
             optionsMonitor,
             clock,
             NullLogger<DailySummaryMailService>.Instance);
@@ -183,5 +186,31 @@ public class DailySummaryMailServiceIdempotencyTests
         logEntry!.Status.Should().Be(EmailSendStatus.Sent);
         logEntry.BookingCount.Should().Be(4);
         logEntry.Recipients.Should().Contain("kitchen@cohu.com");
+    }
+
+    [Fact]
+    public async Task RunAsync_ConfirmationSenderThrows_StillReportsSentWithExitCodeZero()
+    {
+        // D2: a confirmation-sending failure must never change the run's own outcome. The summary
+        // send itself succeeds; only the human-readable Message gains a note that confirmations
+        // could not be sent — Status, BookingCount and SuggestedExitCode are all decided by the
+        // summary alone.
+        var options = TestData.DefaultOptions();
+        var clock = new FakeClock();
+        var bookingRepo = new InMemoryBookingRepository();
+        SeedBookings(bookingRepo, WorkingDate, 3);
+        var throwingConfirmationSender = new FakeEmployeeConfirmationSender(throws: new InvalidOperationException("boom"));
+
+        var service = CreateService(out var fakeSender, out var logRepo, options, clock, bookingRepo, throwingConfirmationSender);
+
+        var result = await service.RunAsync(WorkingDate, dryRun: false);
+
+        result.Status.Should().Be(EmailSendStatus.Sent);
+        result.SuggestedExitCode.Should().Be(0);
+        result.BookingCount.Should().Be(3);
+        fakeSender.SentMessages.Count.Should().Be(1);
+
+        var logEntry = await logRepo.GetAsync(WorkingDate);
+        logEntry!.Status.Should().Be(EmailSendStatus.Sent);
     }
 }

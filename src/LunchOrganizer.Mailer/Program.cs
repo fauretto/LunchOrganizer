@@ -85,12 +85,14 @@ builder.Services.Configure<AdminUsersOptions>(builder.Configuration);
 builder.Services.AddDbContextFactory<LunchOrganizerDbContext>((sp, options) =>
 {
     var dbOptions = sp.GetRequiredService<IOptionsMonitor<DatabaseOptions>>().CurrentValue;
-    options.UseNpgsql(dbOptions.BuildConnectionString());
+    // CommandTimeoutSeconds is applied here (not as a connection-string keyword) — see the matching
+    // comment in DatabaseOptionsExtensions.BuildConnectionString.
+    options.UseSqlServer(dbOptions.BuildConnectionString(), sql => sql.CommandTimeout(dbOptions.CommandTimeoutSeconds));
 });
 
 builder.Services.AddSingleton<IClock, SystemClock>();
 
-// Real, PostgreSQL-backed repositories — the same ones the web application uses.
+// Real, SQL Server-backed repositories — the same ones the web application uses.
 builder.Services.AddLunchOrganizerData();
 
 // Scoped, not Singleton: these consume the scoped, EF Core-backed IBookingRepository /
@@ -98,6 +100,10 @@ builder.Services.AddLunchOrganizerData();
 // consume a scoped dependency (ValidateScopes above would throw at startup if it did).
 builder.Services.AddScoped<IDailySummaryBuilder, DailySummaryBuilder>();
 builder.Services.AddSingleton<IDailySummaryBodyRenderer, DailySummaryBodyRenderer>();
+
+// Per-employee booking confirmations (plan §4.9) — mirrors the Web project's registrations above.
+builder.Services.AddSingleton<IEmployeeConfirmationBodyRenderer, EmployeeConfirmationBodyRenderer>();
+builder.Services.AddScoped<IEmployeeConfirmationSender, EmployeeConfirmationSender>();
 
 builder.Services.AddSingleton<PickupDirectoryEmailSender>();
 builder.Services.AddSingleton<SmtpEmailSender>();
@@ -115,7 +121,7 @@ builder.Services.AddScoped<IDailySummaryMailService, DailySummaryMailService>();
 using var host = builder.Build();
 
 // Preflight: the mailer must never create the database schema — the web application owns that.
-// Fail fast, in plain language a non-technical operator can act on, if Postgres isn't reachable
+// Fail fast, in plain language a non-technical operator can act on, if SQL Server isn't reachable
 // or the schema hasn't been created yet.
 try
 {

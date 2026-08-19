@@ -18,26 +18,26 @@ public class EmailLogEntryConfiguration : IEntityTypeConfiguration<EmailLogEntry
 
         builder.Property(e => e.SentAtUtc)
             .HasColumnName("sent_at_utc")
-            .HasColumnType("timestamptz")
+            .HasColumnType("datetimeoffset(7)")
             .IsRequired();
 
         builder.Property(e => e.Status)
             .HasColumnName("status")
-            .HasColumnType("text")
+            .HasColumnType("nvarchar(20)")
             .HasConversion<string>()
             .IsRequired();
 
         builder.Property(e => e.Recipients)
             .HasColumnName("recipients")
-            .HasColumnType("text");
+            .HasColumnType("nvarchar(max)");
 
         builder.Property(e => e.BookingCount)
             .HasColumnName("booking_count")
-            .HasColumnType("integer")
+            .HasColumnType("int")
             .IsRequired();
 
         builder.Property(e => e.ErrorMessage)
             .HasColumnName("error_message")
-            .HasColumnType("text");
+            .HasColumnType("nvarchar(max)");
     }
 }

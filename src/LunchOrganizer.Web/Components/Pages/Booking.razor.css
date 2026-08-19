@@ -58,6 +58,41 @@
     cursor: pointer;
 }
 
+.register-prompt-email {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.register-prompt-email-label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+}
+
+.register-prompt-email-input {
+    min-height: var(--min-target);
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    border: var(--border-width) solid var(--color-neutral-300);
+    background: var(--color-surface);
+    color: var(--color-neutral-900);
+    box-sizing: border-box;
+}
+
+.register-prompt-email-why {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-neutral-700);
+}
+
+.register-prompt-email-error {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-destructive);
+    font-weight: var(--font-weight-medium);
+}
+
 .register-prompt-actions {
     display: flex;
     gap: var(--space-3);
@@ -76,6 +111,11 @@
     background: var(--color-primary-700);
     color: var(--color-on-primary);
     border: none;
+}
+
+.register-prompt-confirm-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .register-prompt-cancel-btn {

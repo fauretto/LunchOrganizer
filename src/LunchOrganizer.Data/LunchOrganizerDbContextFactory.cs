@@ -11,18 +11,21 @@ namespace LunchOrganizer.Data;
 /// This connection string is NEVER used at runtime — the running application always builds its
 /// connection string from <see cref="LunchOrganizer.Domain.Configuration.DatabaseOptions"/> via
 /// <see cref="DatabaseOptionsExtensions.BuildConnectionString"/>. It only needs to point at a
-/// syntactically valid Postgres server so EF Core tooling can generate migrations offline; the
+/// syntactically valid SQL Server instance so EF Core tooling can generate migrations offline; the
 /// database referenced here does not need to exist.
+///
+/// <c>Encrypt=False</c> is required here because LocalDB does not support encryption. This has no
+/// bearing on production, which uses `config/database.json`, where `Encrypt` is `true`.
 /// </summary>
 public class LunchOrganizerDbContextFactory : IDesignTimeDbContextFactory<LunchOrganizerDbContext>
 {
     public LunchOrganizerDbContext CreateDbContext(string[] args)
     {
         const string designTimeConnectionString =
-            "Host=localhost;Port=5432;Database=lunchorganizer;Username=postgres;Password=changeme";
+            "Server=(localdb)\\MSSQLLocalDB;Database=lunchorganizer;Integrated Security=True;Encrypt=False;TrustServerCertificate=True";
 
         var optionsBuilder = new DbContextOptionsBuilder<LunchOrganizerDbContext>();
-        optionsBuilder.UseNpgsql(designTimeConnectionString);
+        optionsBuilder.UseSqlServer(designTimeConnectionString);
 
         return new LunchOrganizerDbContext(optionsBuilder.Options);
     }

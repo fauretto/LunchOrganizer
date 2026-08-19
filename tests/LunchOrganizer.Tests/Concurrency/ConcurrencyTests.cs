@@ -2,12 +2,11 @@ using FluentAssertions;
 using LunchOrganizer.Domain.Entities;
 using LunchOrganizer.Domain.Common;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 namespace LunchOrganizer.Tests.Concurrency;
 
 /// <summary>
-/// Exercises real concurrency behavior of the Postgres-backed repositories against a real, migrated
+/// Exercises real concurrency behavior of the SQL Server-backed repositories against a real, migrated
 /// "lunchorganizer_test" database (see <see cref="ConcurrencyTestFixture"/>). Each test uses its own
 /// distinct seed data (employee names, dates spread across March-September 2027) so tests can never
 /// collide with each other even under parallel execution within the collection.
@@ -117,7 +116,7 @@ public sealed class ConcurrencyTests(ConcurrencyTestFixture fixture)
                 continue;
             }
 
-            (exception is DeleteRestrictedException or DbUpdateException or PostgresException).Should().BeTrue(
+            (exception is DeleteRestrictedException or DbUpdateException or Microsoft.Data.SqlClient.SqlException).Should().BeTrue(
                 $"unexpected exception type: {exception?.GetType().FullName}: {exception?.Message}");
         }
 

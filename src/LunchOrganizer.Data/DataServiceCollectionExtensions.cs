@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace LunchOrganizer.Data;
 
 /// <summary>
-/// Registers the EF Core / Npgsql-backed repositories and the database bootstrapper with the DI container.
+/// Registers the EF Core / SQL Server-backed repositories and the database bootstrapper with the DI container.
 /// </summary>
 public static class DataServiceCollectionExtensions
 {

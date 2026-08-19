@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace LunchOrganizer.Data.Repositories;
 
 /// <summary>
-/// EF Core / Npgsql-backed implementation of <see cref="IBookingRepository"/>.
+/// EF Core / SQL Server-backed implementation of <see cref="IBookingRepository"/>.
 /// </summary>
 public sealed class BookingRepository(IDbContextFactory<LunchOrganizerDbContext> factory) : IBookingRepository
 {
@@ -63,12 +63,27 @@ public sealed class BookingRepository(IDbContextFactory<LunchOrganizerDbContext>
     public async Task<Booking> UpsertAsync(Booking booking, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
+        // WITH (HOLDLOCK) is mandatory, not optional: a bare MERGE only takes an update lock on rows
+        // it matches, so two concurrent MERGEs against a key that does not yet exist can both fall
+        // through to WHEN NOT MATCHED and one gets a primary-key violation. HOLDLOCK (= SERIALIZABLE)
+        // makes the server take a range lock on the key, which is what makes this genuinely
+        // equivalent to PostgreSQL's upsert (INSERT ... DO UPDATE) guarantee.
         var rows = await db.Bookings.FromSqlInterpolated($"""
-            INSERT INTO bookings (employee_id, booking_date, menu_id, price_snapshot, created_at_utc, updated_at_utc)
-            VALUES ({booking.EmployeeId}, {booking.BookingDate}, {booking.MenuId}, {booking.PriceSnapshot}, now(), now())
-            ON CONFLICT (employee_id, booking_date)
-            DO UPDATE SET menu_id = EXCLUDED.menu_id, price_snapshot = EXCLUDED.price_snapshot, updated_at_utc = now()
-            RETURNING id, employee_id, booking_date, menu_id, price_snapshot, created_at_utc, updated_at_utc, xmin
+            MERGE bookings WITH (HOLDLOCK) AS t
+            USING (VALUES ({booking.EmployeeId}, {booking.BookingDate}, {booking.MenuId}, {booking.PriceSnapshot}))
+                  AS s (employee_id, booking_date, menu_id, price_snapshot)
+                ON t.employee_id = s.employee_id AND t.booking_date = s.booking_date
+            WHEN MATCHED THEN
+                UPDATE SET menu_id        = s.menu_id,
+                           price_snapshot = s.price_snapshot,
+                           updated_at_utc = CAST(SYSUTCDATETIME() AS datetimeoffset),
+                           version        = t.version + 1
+            WHEN NOT MATCHED THEN
+                INSERT (employee_id, booking_date, menu_id, price_snapshot, created_at_utc, updated_at_utc, version)
+                VALUES (s.employee_id, s.booking_date, s.menu_id, s.price_snapshot,
+                        CAST(SYSUTCDATETIME() AS datetimeoffset), CAST(SYSUTCDATETIME() AS datetimeoffset), 1)
+            OUTPUT inserted.id, inserted.employee_id, inserted.booking_date, inserted.menu_id,
+                   inserted.price_snapshot, inserted.created_at_utc, inserted.updated_at_utc, inserted.version;
             """).AsNoTracking().ToListAsync(ct);
         return rows[0];
     }
@@ -80,12 +95,27 @@ public sealed class BookingRepository(IDbContextFactory<LunchOrganizerDbContext>
         var results = new List<Booking>(bookings.Count);
         foreach (var booking in bookings)
         {
+            // WITH (HOLDLOCK) is mandatory, not optional: a bare MERGE only takes an update lock on
+            // rows it matches, so two concurrent MERGEs against a key that does not yet exist can both
+            // fall through to WHEN NOT MATCHED and one gets a primary-key violation. HOLDLOCK
+            // (= SERIALIZABLE) makes the server take a range lock on the key, which is what makes this
+            // genuinely equivalent to PostgreSQL's upsert (INSERT ... DO UPDATE) guarantee.
             var rows = await db.Bookings.FromSqlInterpolated($"""
-                INSERT INTO bookings (employee_id, booking_date, menu_id, price_snapshot, created_at_utc, updated_at_utc)
-                VALUES ({booking.EmployeeId}, {booking.BookingDate}, {booking.MenuId}, {booking.PriceSnapshot}, now(), now())
-                ON CONFLICT (employee_id, booking_date)
-                DO UPDATE SET menu_id = EXCLUDED.menu_id, price_snapshot = EXCLUDED.price_snapshot, updated_at_utc = now()
-                RETURNING id, employee_id, booking_date, menu_id, price_snapshot, created_at_utc, updated_at_utc, xmin
+                MERGE bookings WITH (HOLDLOCK) AS t
+                USING (VALUES ({booking.EmployeeId}, {booking.BookingDate}, {booking.MenuId}, {booking.PriceSnapshot}))
+                      AS s (employee_id, booking_date, menu_id, price_snapshot)
+                    ON t.employee_id = s.employee_id AND t.booking_date = s.booking_date
+                WHEN MATCHED THEN
+                    UPDATE SET menu_id        = s.menu_id,
+                               price_snapshot = s.price_snapshot,
+                               updated_at_utc = CAST(SYSUTCDATETIME() AS datetimeoffset),
+                               version        = t.version + 1
+                WHEN NOT MATCHED THEN
+                    INSERT (employee_id, booking_date, menu_id, price_snapshot, created_at_utc, updated_at_utc, version)
+                    VALUES (s.employee_id, s.booking_date, s.menu_id, s.price_snapshot,
+                            CAST(SYSUTCDATETIME() AS datetimeoffset), CAST(SYSUTCDATETIME() AS datetimeoffset), 1)
+                OUTPUT inserted.id, inserted.employee_id, inserted.booking_date, inserted.menu_id,
+                       inserted.price_snapshot, inserted.created_at_utc, inserted.updated_at_utc, inserted.version;
                 """).AsNoTracking().ToListAsync(ct);
             results.Add(rows[0]);
         }

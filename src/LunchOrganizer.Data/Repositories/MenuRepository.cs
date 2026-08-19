@@ -3,12 +3,11 @@ using LunchOrganizer.Domain;
 using LunchOrganizer.Domain.Common;
 using LunchOrganizer.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 namespace LunchOrganizer.Data.Repositories;
 
 /// <summary>
-/// EF Core / Npgsql-backed implementation of <see cref="IMenuRepository"/>.
+/// EF Core / SQL Server-backed implementation of <see cref="IMenuRepository"/>.
 /// </summary>
 public sealed class MenuRepository(IDbContextFactory<LunchOrganizerDbContext> factory) : IMenuRepository
 {
@@ -73,7 +72,7 @@ public sealed class MenuRepository(IDbContextFactory<LunchOrganizerDbContext> fa
 
                 return await db.Menus.AsNoTracking().SingleAsync(m => m.Id == menu.Id, ct);
             }
-            catch (DbUpdateException ex) when (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
+            catch (DbUpdateException ex) when (SqlServerErrors.IsUniqueViolation(ex))
             {
                 lastException = ex;
             }
@@ -94,10 +93,9 @@ public sealed class MenuRepository(IDbContextFactory<LunchOrganizerDbContext> fa
     {
         await using var db = await factory.CreateDbContextAsync(ct);
 
-        // Load the tracked entity so its concurrency token (the PostgreSQL xmin system column,
-        // mapped via IsRowVersion) is populated. Removing a bare stub would send xmin = 0 in the
-        // DELETE's WHERE clause, match no rows, and raise DbUpdateConcurrencyException while leaving
-        // the menu undeleted.
+        // Load the tracked entity so its concurrency token (the app-managed `version` column) is
+        // populated. Removing a bare stub would send version = 0 in the DELETE's WHERE clause, match
+        // no rows, and raise DbUpdateConcurrencyException while leaving the menu undeleted.
         var menu = await db.Menus.SingleOrDefaultAsync(m => m.Id == id, ct);
         if (menu is null)
         {
@@ -110,7 +108,7 @@ public sealed class MenuRepository(IDbContextFactory<LunchOrganizerDbContext> fa
         {
             await db.SaveChangesAsync(ct);
         }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pg && pg.SqlState == "23503")
+        catch (DbUpdateException ex) when (SqlServerErrors.IsForeignKeyViolation(ex))
         {
             throw new DeleteRestrictedException("Menu cannot be deleted: referenced by existing bookings.", ex);
         }

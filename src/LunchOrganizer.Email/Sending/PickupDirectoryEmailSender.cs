@@ -31,18 +31,22 @@ public sealed class PickupDirectoryEmailSender(
 
             Directory.CreateDirectory(directory);
 
+            var kind = "lunch-summary";
             var datePart = "unknown-date";
-            if (message.Subject.StartsWith(opts.SubjectPrefix, StringComparison.Ordinal))
+            if (TryMatchSubject(message.Subject, opts.SubjectPrefix, opts.SubjectDateFormat, out var summaryDate))
             {
-                var candidate = message.Subject.Substring(opts.SubjectPrefix.Length);
-                if (DateOnly.TryParseExact(candidate, opts.SubjectDateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed))
-                {
-                    datePart = parsed.ToString("yyyy-MM-dd");
-                }
+                datePart = summaryDate;
+            }
+            else if (TryMatchSubject(message.Subject, opts.ConfirmationSubjectPrefix, opts.SubjectDateFormat, out var confirmationDate))
+            {
+                kind = "confirmation";
+                datePart = confirmationDate;
             }
 
             var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmssfff", CultureInfo.InvariantCulture);
-            var fileName = $"lunch-summary_{datePart}_{timestamp}.eml";
+            var fileName = kind == "confirmation"
+                ? BuildConfirmationFileName(datePart, message.To, timestamp)
+                : $"lunch-summary_{datePart}_{timestamp}.eml";
             var path = Path.Combine(directory, fileName);
 
             var mime = MimeMessageFactory.Create(message);
@@ -59,5 +63,52 @@ public sealed class PickupDirectoryEmailSender(
             logger.LogError(ex, "Failed to write the email with subject {Subject} to the pickup directory.", message.Subject);
             return OperationResult.Fail($"Failed to write the email to the pickup directory: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Tries to strip <paramref name="prefix"/> from <paramref name="subject"/> and parse the remainder as a
+    /// date using <paramref name="dateFormat"/>. An empty configured prefix must not match every subject, so
+    /// it is rejected up front rather than treated as a zero-length match.
+    /// </summary>
+    private static bool TryMatchSubject(string subject, string prefix, string dateFormat, out string datePart)
+    {
+        if (!string.IsNullOrEmpty(prefix) && subject.StartsWith(prefix, StringComparison.Ordinal))
+        {
+            var candidate = subject.Substring(prefix.Length);
+            if (DateOnly.TryParseExact(candidate, dateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed))
+            {
+                datePart = parsed.ToString("yyyy-MM-dd");
+                return true;
+            }
+        }
+
+        datePart = "unknown-date";
+        return false;
+    }
+
+    private static string BuildConfirmationFileName(string datePart, IReadOnlyList<string> to, string timestamp)
+    {
+        var recipientSegment = to.Count > 0 ? BuildRecipientSegment(to[0]) : null;
+        return string.IsNullOrEmpty(recipientSegment)
+            ? $"confirmation_{datePart}_{timestamp}.eml"
+            : $"confirmation_{datePart}_{recipientSegment}_{timestamp}.eml";
+    }
+
+    /// <summary>Derives a filesystem-safe segment from a recipient address's local part (before the '@').</summary>
+    private static string BuildRecipientSegment(string address)
+    {
+        var at = address.IndexOf('@');
+        var localPart = at >= 0 ? address.Substring(0, at) : address;
+        var lowered = localPart.ToLower(CultureInfo.InvariantCulture);
+
+        var sanitized = new char[lowered.Length];
+        for (var i = 0; i < lowered.Length; i++)
+        {
+            var c = lowered[i];
+            sanitized[i] = c is (>= 'a' and <= 'z') or (>= '0' and <= '9') or '.' or '-' or '_' ? c : '-';
+        }
+
+        var result = new string(sanitized);
+        return result.Length > 40 ? result.Substring(0, 40) : result;
     }
 }

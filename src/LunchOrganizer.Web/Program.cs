@@ -57,7 +57,9 @@ builder.Services.Configure<AdminUsersOptions>(builder.Configuration);
 builder.Services.AddDbContextFactory<LunchOrganizerDbContext>((sp, options) =>
 {
     var dbOptions = sp.GetRequiredService<IOptionsMonitor<DatabaseOptions>>().CurrentValue;
-    options.UseNpgsql(dbOptions.BuildConnectionString());
+    // CommandTimeoutSeconds is applied here (not as a connection-string keyword) — see the matching
+    // comment in DatabaseOptionsExtensions.BuildConnectionString.
+    options.UseSqlServer(dbOptions.BuildConnectionString(), sql => sql.CommandTimeout(dbOptions.CommandTimeoutSeconds));
 });
 
 // Fully implemented already — safe to wire up now regardless of backend/fakes swap:
@@ -129,7 +131,7 @@ using (var startupLoggerFactory = LoggerFactory.Create(logging => logging.AddCon
     });
 }
 
-// ---- Real, PostgreSQL-backed repositories and business services (replaces the Phase-1 fakes) ----
+// ---- Real, SQL Server-backed repositories and business services (replaces the Phase-1 fakes) ----
 builder.Services.AddLunchOrganizerData();
 builder.Services.AddLunchOrganizerServices();
 
@@ -145,6 +147,12 @@ builder.Services.AddLunchOrganizerServices();
 // one of them wins and only a single email is sent.
 builder.Services.AddScoped<IDailySummaryBuilder, DailySummaryBuilder>();
 builder.Services.AddSingleton<IDailySummaryBodyRenderer, DailySummaryBodyRenderer>();
+
+// Per-employee booking confirmations (plan §4.9): the renderer is stateless like the summary
+// renderer above, so singleton; the sender is scoped only to keep its lifetime consistent with the
+// scoped IDailySummaryMailService it sits alongside — it consumes nothing scoped today.
+builder.Services.AddSingleton<IEmployeeConfirmationBodyRenderer, EmployeeConfirmationBodyRenderer>();
+builder.Services.AddScoped<IEmployeeConfirmationSender, EmployeeConfirmationSender>();
 
 builder.Services.AddSingleton<PickupDirectoryEmailSender>();
 builder.Services.AddSingleton<SmtpEmailSender>();

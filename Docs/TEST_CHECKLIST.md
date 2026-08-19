@@ -1,5 +1,12 @@
 # LunchOrganizer — Manual test checklist
 
+> ⚠ **Partly out of date as of 18 August 2026.** The application has since been migrated from
+> PostgreSQL to SQL Server. The **UI flow sections below are still valid and still unexecuted**, but
+> every database command in this document uses `psql` and no longer works.
+>
+> For the SQL Server setup commands, and for validating the migration itself plus the new
+> per-employee confirmation emails, see **[`TEST_PLAN_SQLSERVER_MIGRATION.md`](TEST_PLAN_SQLSERVER_MIGRATION.md)**.
+
 **Written 13 August 2026, for Massimo's own testing.**
 
 This is everything that has **not** been exercised by a human. It excludes anything already proven by the automated suite or by direct verification — no point re-testing what 48 passing tests and live SQL already cover.

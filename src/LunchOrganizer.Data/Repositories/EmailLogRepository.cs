@@ -6,17 +6,24 @@ using Microsoft.EntityFrameworkCore;
 namespace LunchOrganizer.Data.Repositories;
 
 /// <summary>
-/// EF Core / Npgsql-backed implementation of <see cref="IEmailLogRepository"/>.
+/// EF Core / SQL Server-backed implementation of <see cref="IEmailLogRepository"/>.
 /// </summary>
 public sealed class EmailLogRepository(IDbContextFactory<LunchOrganizerDbContext> factory) : IEmailLogRepository
 {
     public async Task<bool> TryBeginAsync(DateOnly date, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
+        // A guarded INSERT, not a MERGE: there is nothing to update on the losing side, so this
+        // replaces PostgreSQL's insert-or-do-nothing-on-duplicate behavior. WITH (UPDLOCK, HOLDLOCK)
+        // on the existence check is what serialises two racing callers — @@ROWCOUNT (returned here as
+        // `affected`) is 1 for the winner and 0 for the loser, which is exactly the contract
+        // TryBeginAsync documents, and it is what gives the mailer its exactly-once guarantee.
+        // email_log has no `version` column: it is written once per day via this reserve-then-complete
+        // pattern, never edited concurrently.
         var affected = await db.Database.ExecuteSqlInterpolatedAsync($"""
             INSERT INTO email_log (summary_date, sent_at_utc, status, recipients, booking_count, error_message)
-            VALUES ({date}, now(), {EmailSendStatus.Reserved.ToString()}, NULL, 0, NULL)
-            ON CONFLICT (summary_date) DO NOTHING
+            SELECT {date}, CAST(SYSUTCDATETIME() AS datetimeoffset), {EmailSendStatus.Reserved.ToString()}, NULL, 0, NULL
+            WHERE NOT EXISTS (SELECT 1 FROM email_log WITH (UPDLOCK, HOLDLOCK) WHERE summary_date = {date});
             """, ct);
         return affected > 0;
     }

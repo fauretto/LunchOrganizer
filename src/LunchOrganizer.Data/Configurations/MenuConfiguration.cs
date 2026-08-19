@@ -15,7 +15,7 @@ public class MenuConfiguration : IEntityTypeConfiguration<Menu>
 
         builder.Property(m => m.Id)
             .HasColumnName("id")
-            .UseIdentityAlwaysColumn();
+            .UseIdentityColumn();
 
         builder.Property(m => m.MenuDate)
             .HasColumnName("menu_date")
@@ -24,27 +24,32 @@ public class MenuConfiguration : IEntityTypeConfiguration<Menu>
 
         builder.Property(m => m.MenuNumber)
             .HasColumnName("menu_number")
-            .HasColumnType("integer")
+            .HasColumnType("int")
             .IsRequired();
 
         builder.Property(m => m.Description)
             .HasColumnName("description")
-            .HasColumnType("text");
+            .HasColumnType("nvarchar(max)");
 
         builder.Property(m => m.CreatedAtUtc)
             .HasColumnName("created_at_utc")
-            .HasColumnType("timestamptz")
+            .HasColumnType("datetimeoffset(7)")
             .IsRequired()
-            .HasDefaultValueSql("now()");
+            .HasDefaultValueSql("CAST(SYSUTCDATETIME() AS datetimeoffset)");
 
         builder.Property(m => m.UpdatedAtUtc)
             .HasColumnName("updated_at_utc")
-            .HasColumnType("timestamptz")
+            .HasColumnType("datetimeoffset(7)")
             .IsRequired()
-            .HasDefaultValueSql("now()");
+            .HasDefaultValueSql("CAST(SYSUTCDATETIME() AS datetimeoffset)");
 
+        // PostgreSQL's xmin was server-maintained; SQL Server has no equivalent, so the concurrency
+        // token becomes an app-managed bigint (see LunchOrganizerDbContext.ApplyVersionMaintenance).
         builder.Property(m => m.Version)
-            .IsRowVersion();
+            .HasColumnName("version")
+            .HasColumnType("bigint")
+            .IsConcurrencyToken()
+            .HasDefaultValueSql("1");
 
         builder.HasIndex(m => new { m.MenuDate, m.MenuNumber })
             .IsUnique()

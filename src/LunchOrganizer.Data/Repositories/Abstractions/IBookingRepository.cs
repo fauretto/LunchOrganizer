@@ -20,9 +20,9 @@ public interface IBookingRepository
     Task<IReadOnlyList<Booking>> GetForEmployeeBetweenAsync(int? employeeId, DateOnly from, DateOnly to, CancellationToken ct = default);
 
     /// <summary>
-    /// Atomic upsert: INSERT ... ON CONFLICT (employee_id, booking_date) DO UPDATE SET menu_id = ...,
-    /// price_snapshot = ..., updated_at_utc = now(), executed as a single statement with no read-modify-write
-    /// window. Two concurrent bookings for the same employee/day resolve to exactly one row, last writer wins,
+    /// Atomic upsert: a single MERGE statement that inserts a new booking or updates the existing one
+    /// for the same employee/day, executed as a single statement with no read-modify-write window.
+    /// Two concurrent bookings for the same employee/day resolve to exactly one row, last writer wins,
     /// no exception (see implementation plan §11.4).
     /// </summary>
     Task<Booking> UpsertAsync(Booking booking, CancellationToken ct = default);
@@ -34,11 +34,11 @@ public interface IBookingRepository
     /// Upserts multiple bookings for possibly-different employees/dates inside a SINGLE database
     /// transaction (all commit or none), applying each upsert in the order given by the caller — used
     /// by BookingService.BookWeekAsync so that "book my whole week" is atomic across days (plan §11.4).
-    /// Each individual upsert is still the same atomic INSERT ... ON CONFLICT ... DO UPDATE statement as
-    /// UpsertAsync, just run repeatedly inside one transaction/one context instead of one per call.
+    /// Each individual upsert is still the same atomic MERGE statement as UpsertAsync, just run
+    /// repeatedly inside one transaction/one context instead of one per call.
     /// Declared as a default interface method (with this naive sequential fallback body) purely so that
     /// pre-existing implementers of this interface elsewhere in the solution (e.g. an in-memory test
-    /// double) keep compiling without modification; the real, Postgres-backed <c>BookingRepository</c>
+    /// double) keep compiling without modification; the real, SQL Server-backed <c>BookingRepository</c>
     /// overrides this with a true single-transaction implementation.
     /// </summary>
     async Task<IReadOnlyList<Booking>> UpsertManyAsync(IReadOnlyList<Booking> bookings, CancellationToken ct = default)

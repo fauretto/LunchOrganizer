@@ -23,10 +23,10 @@ internal static class TestData
         EnableInAppScheduler = false
     };
 
-    public static Booking Booking(int employeeId, string employeeName, DateOnly date, int menuId, int menuNumber, string? menuDescription, decimal price = 12.50m)
+    public static Booking Booking(int employeeId, string employeeName, DateOnly date, int menuId, int menuNumber, string? menuDescription, decimal price = 12.50m, string? employeeEmail = null)
     {
         var now = DateTimeOffset.UtcNow;
-        var employee = new Employee { Id = employeeId, FullName = employeeName, IsActive = true, CreatedAtUtc = now, UpdatedAtUtc = now, Version = 1 };
+        var employee = new Employee { Id = employeeId, FullName = employeeName, Email = employeeEmail, IsActive = true, CreatedAtUtc = now, UpdatedAtUtc = now, Version = 1 };
         var menu = new Menu { Id = menuId, MenuDate = date, MenuNumber = menuNumber, Description = menuDescription, CreatedAtUtc = now, UpdatedAtUtc = now, Version = 1 };
         return new Booking
         {

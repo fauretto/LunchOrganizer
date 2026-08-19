@@ -37,7 +37,7 @@ internal sealed class FakeEmployeeService(FakeDataStore store, IClock clock) : I
         return Task.FromResult<IReadOnlyList<EmployeeDto>>(results);
     }
 
-    public Task<OperationResult<EmployeeDto>> RegisterAsync(string fullName, CancellationToken ct = default)
+    public Task<OperationResult<EmployeeDto>> RegisterAsync(string fullName, string? email = null, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(fullName))
         {
@@ -46,6 +46,9 @@ internal sealed class FakeEmployeeService(FakeDataStore store, IClock clock) : I
 
         var trimmed = fullName.Trim();
 
+        // Whitespace collapses to null, not "", matching EmployeeService.RegisterAsync.
+        var normalizedEmail = string.IsNullOrWhiteSpace(email) ? null : email.Trim();
+
         lock (store.RegistrationLock)
         {
             var existing = store.Employees.Values
@@ -53,6 +56,20 @@ internal sealed class FakeEmployeeService(FakeDataStore store, IClock clock) : I
 
             if (existing is not null)
             {
+                // Reproduces EmployeeService.RegisterAsync's reactivation fix: a deactivated employee
+                // whose name matches, or one missing an email while a new one was supplied, is
+                // reactivated / filled in rather than silently returned as-is. An existing non-empty
+                // email is never overwritten.
+                var needsReactivation = !existing.IsActive;
+                var needsEmail = normalizedEmail is not null && string.IsNullOrWhiteSpace(existing.Email);
+                if (needsReactivation || needsEmail)
+                {
+                    if (needsReactivation) existing.IsActive = true;
+                    if (needsEmail) existing.Email = normalizedEmail;
+                    existing.UpdatedAtUtc = clock.UtcNow;
+                    existing.Version++;
+                }
+
                 return Task.FromResult(OperationResult<EmployeeDto>.Ok(ToDto(existing), "Employee already registered."));
             }
 
@@ -62,7 +79,7 @@ internal sealed class FakeEmployeeService(FakeDataStore store, IClock clock) : I
             {
                 Id = id,
                 FullName = trimmed,
-                Email = null,
+                Email = normalizedEmail,
                 IsActive = true,
                 CreatedAtUtc = now,
                 UpdatedAtUtc = now,

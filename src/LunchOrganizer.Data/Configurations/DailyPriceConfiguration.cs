@@ -19,22 +19,27 @@ public class DailyPriceConfiguration : IEntityTypeConfiguration<DailyPrice>
 
         builder.Property(d => d.Price)
             .HasColumnName("price")
-            .HasColumnType("numeric(10,2)")
+            .HasColumnType("decimal(10,2)")
             .IsRequired();
 
         builder.Property(d => d.CreatedAtUtc)
             .HasColumnName("created_at_utc")
-            .HasColumnType("timestamptz")
+            .HasColumnType("datetimeoffset(7)")
             .IsRequired()
-            .HasDefaultValueSql("now()");
+            .HasDefaultValueSql("CAST(SYSUTCDATETIME() AS datetimeoffset)");
 
         builder.Property(d => d.UpdatedAtUtc)
             .HasColumnName("updated_at_utc")
-            .HasColumnType("timestamptz")
+            .HasColumnType("datetimeoffset(7)")
             .IsRequired()
-            .HasDefaultValueSql("now()");
+            .HasDefaultValueSql("CAST(SYSUTCDATETIME() AS datetimeoffset)");
 
+        // PostgreSQL's xmin was server-maintained; SQL Server has no equivalent, so the concurrency
+        // token becomes an app-managed bigint (see LunchOrganizerDbContext.ApplyVersionMaintenance).
         builder.Property(d => d.Version)
-            .IsRowVersion();
+            .HasColumnName("version")
+            .HasColumnType("bigint")
+            .IsConcurrencyToken()
+            .HasDefaultValueSql("1");
     }
 }

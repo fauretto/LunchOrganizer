@@ -35,4 +35,14 @@ public sealed class EmailOptions
     public bool SkipWhenNoBookings { get; set; } = true;
     public string PickupDirectory { get; set; } = "./mail-drop";
     public bool EnableInAppScheduler { get; set; } = false;
+
+    /// <summary>
+    /// Whether each employee who booked a lunch also receives a personal confirmation email
+    /// (plan §4.8). Defaults to <see langword="true"/> because that is the requested behaviour;
+    /// the toggle exists so it can be switched off without redeploying if it turns out unwelcome.
+    /// </summary>
+    public bool SendEmployeeConfirmations { get; set; } = true;
+
+    /// <summary>Prefix for a confirmation email's subject, followed by the date in <see cref="SubjectDateFormat"/>.</summary>
+    public string ConfirmationSubjectPrefix { get; set; } = "Confirmation - ";
 }

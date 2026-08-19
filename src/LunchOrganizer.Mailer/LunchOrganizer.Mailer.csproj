@@ -10,7 +10,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
     <!-- Pins the EF Core version consumed transitively via LunchOrganizer.Data to match the version
-         LunchOrganizer.Data was actually built against (Npgsql.EntityFrameworkCore.PostgreSQL alone
+         LunchOrganizer.Data was actually built against (Microsoft.EntityFrameworkCore.SqlServer alone
          would resolve to an older EF Core and cause a CS1705 assembly-version mismatch). Same pattern
          as LunchOrganizer.Web.csproj. -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11">
@@ -27,7 +27,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="../../config/*.json" Link="config/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../config/*.json" Exclude="../../config/*.local.json" Link="config/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Developer-only overrides: copied next to the build output for local runs, but never published -
+         a *.local.json reaching a server silently overrides the real config there. -->
+    <None Include="../../config/*.local.json" Link="config/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
   </ItemGroup>
 
 </Project>

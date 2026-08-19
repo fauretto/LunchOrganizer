@@ -3,8 +3,8 @@ using System;
 using LunchOrganizer.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -18,19 +18,18 @@ namespace LunchOrganizer.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "10.0.11")
-                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
-            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "citext");
-            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("LunchOrganizer.Domain.Entities.Booking", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
+                        .HasColumnType("int")
                         .HasColumnName("id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateOnly>("BookingDate")
                         .HasColumnType("date")
@@ -38,33 +37,34 @@ namespace LunchOrganizer.Data.Migrations
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
+                        .HasColumnType("datetimeoffset(7)")
                         .HasColumnName("created_at_utc")
-                        .HasDefaultValueSql("now()");
+                        .HasDefaultValueSql("CAST(SYSUTCDATETIME() AS datetimeoffset)");
 
                     b.Property<int>("EmployeeId")
-                        .HasColumnType("integer")
+                        .HasColumnType("int")
                         .HasColumnName("employee_id");
 
                     b.Property<int>("MenuId")
-                        .HasColumnType("integer")
+                        .HasColumnType("int")
                         .HasColumnName("menu_id");
 
                     b.Property<decimal>("PriceSnapshot")
-                        .HasColumnType("numeric(10,2)")
+                        .HasColumnType("decimal(10,2)")
                         .HasColumnName("price_snapshot");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
+                        .HasColumnType("datetimeoffset(7)")
                         .HasColumnName("updated_at_utc")
-                        .HasDefaultValueSql("now()");
+                        .HasDefaultValueSql("CAST(SYSUTCDATETIME() AS datetimeoffset)");
 
-                    b.Property<uint>("Version")
+                    b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version")
+                        .HasDefaultValueSql("1");
 
                     b.HasKey("Id");
 
@@ -91,25 +91,26 @@ namespace LunchOrganizer.Data.Migrations
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
+                        .HasColumnType("datetimeoffset(7)")
                         .HasColumnName("created_at_utc")
-                        .HasDefaultValueSql("now()");
+                        .HasDefaultValueSql("CAST(SYSUTCDATETIME() AS datetimeoffset)");
 
                     b.Property<decimal>("Price")
-                        .HasColumnType("numeric(10,2)")
+                        .HasColumnType("decimal(10,2)")
                         .HasColumnName("price");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
+                        .HasColumnType("datetimeoffset(7)")
                         .HasColumnName("updated_at_utc")
-                        .HasDefaultValueSql("now()");
+                        .HasDefaultValueSql("CAST(SYSUTCDATETIME() AS datetimeoffset)");
 
-                    b.Property<uint>("Version")
+                    b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version")
+                        .HasDefaultValueSql("1");
 
                     b.HasKey("PriceDate");
 
@@ -126,24 +127,24 @@ namespace LunchOrganizer.Data.Migrations
                         .HasColumnName("summary_date");
 
                     b.Property<int>("BookingCount")
-                        .HasColumnType("integer")
+                        .HasColumnType("int")
                         .HasColumnName("booking_count");
 
                     b.Property<string>("ErrorMessage")
-                        .HasColumnType("text")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("error_message");
 
                     b.Property<string>("Recipients")
-                        .HasColumnType("text")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("recipients");
 
                     b.Property<DateTimeOffset>("SentAtUtc")
-                        .HasColumnType("timestamptz")
+                        .HasColumnType("datetimeoffset(7)")
                         .HasColumnName("sent_at_utc");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasColumnType("nvarchar(20)")
                         .HasColumnName("status");
 
                     b.HasKey("SummaryDate");
@@ -155,43 +156,45 @@ namespace LunchOrganizer.Data.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
+                        .HasColumnType("int")
                         .HasColumnName("id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
+                        .HasColumnType("datetimeoffset(7)")
                         .HasColumnName("created_at_utc")
-                        .HasDefaultValueSql("now()");
+                        .HasDefaultValueSql("CAST(SYSUTCDATETIME() AS datetimeoffset)");
 
                     b.Property<string>("Email")
-                        .HasColumnType("text")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("email");
 
                     b.Property<string>("FullName")
                         .IsRequired()
-                        .HasColumnType("citext")
-                        .HasColumnName("full_name");
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("full_name")
+                        .UseCollation("Latin1_General_CI_AS");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
+                        .HasColumnType("bit")
                         .HasDefaultValue(true)
                         .HasColumnName("is_active");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
+                        .HasColumnType("datetimeoffset(7)")
                         .HasColumnName("updated_at_utc")
-                        .HasDefaultValueSql("now()");
+                        .HasDefaultValueSql("CAST(SYSUTCDATETIME() AS datetimeoffset)");
 
-                    b.Property<uint>("Version")
+                    b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version")
+                        .HasDefaultValueSql("1");
 
                     b.HasKey("Id");
 
@@ -206,19 +209,19 @@ namespace LunchOrganizer.Data.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
+                        .HasColumnType("int")
                         .HasColumnName("id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
+                        .HasColumnType("datetimeoffset(7)")
                         .HasColumnName("created_at_utc")
-                        .HasDefaultValueSql("now()");
+                        .HasDefaultValueSql("CAST(SYSUTCDATETIME() AS datetimeoffset)");
 
                     b.Property<string>("Description")
-                        .HasColumnType("text")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("description");
 
                     b.Property<DateOnly>("MenuDate")
@@ -226,20 +229,21 @@ namespace LunchOrganizer.Data.Migrations
                         .HasColumnName("menu_date");
 
                     b.Property<int>("MenuNumber")
-                        .HasColumnType("integer")
+                        .HasColumnType("int")
                         .HasColumnName("menu_number");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
+                        .HasColumnType("datetimeoffset(7)")
                         .HasColumnName("updated_at_utc")
-                        .HasDefaultValueSql("now()");
+                        .HasDefaultValueSql("CAST(SYSUTCDATETIME() AS datetimeoffset)");
 
-                    b.Property<uint>("Version")
+                    b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version")
+                        .HasDefaultValueSql("1");
 
                     b.HasKey("Id");
 

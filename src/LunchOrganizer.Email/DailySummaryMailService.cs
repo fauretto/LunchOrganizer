@@ -6,6 +6,7 @@ using LunchOrganizer.Domain.Time;
 using LunchOrganizer.Email.Abstractions;
 using LunchOrganizer.Email.Rendering;
 using LunchOrganizer.Email.Sending;
+using LunchOrganizer.Services.Dtos;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -14,7 +15,9 @@ namespace LunchOrganizer.Email;
 /// <summary>
 /// Orchestrates one run of the daily summary email: builds the summary, renders the body, and either
 /// writes a local preview (dry run) or sends it for real while guarding against duplicate sends via
-/// <see cref="IEmailLogRepository"/>.
+/// <see cref="IEmailLogRepository"/>. Also triggers the per-employee booking confirmations (plan §4.7)
+/// after the summary itself has succeeded — never before, and never in a way that can change the
+/// summary's own outcome.
 /// </summary>
 public sealed class DailySummaryMailService(
     IDailySummaryBuilder summaryBuilder,
@@ -22,6 +25,7 @@ public sealed class DailySummaryMailService(
     IEmailSender emailSender,
     PickupDirectoryEmailSender previewSender,
     IEmailLogRepository emailLogRepository,
+    IEmployeeConfirmationSender confirmationSender,
     IOptionsMonitor<EmailOptions> emailOptions,
     IClock clock,
     ILogger<DailySummaryMailService> logger) : IDailySummaryMailService
@@ -80,9 +84,13 @@ public sealed class DailySummaryMailService(
                 var previewResult = await previewSender.SendAsync(message, ct);
                 if (previewResult.IsSuccess)
                 {
+                    // Confirmations are previewed too (routed to the pickup directory, D3), after the
+                    // summary preview itself succeeded. email_log is never touched on a dry run.
+                    var confirmationSuffix = await SendConfirmationsSafelyAsync(summary, options, dryRun: true, ct);
+
                     return new DailySummaryRunResult(
                         EmailSendStatus.Sent,
-                        $"Dry run: wrote the {summary.TotalBookingCount}-booking summary for {date:yyyy-MM-dd} to the pickup directory. Nothing was sent and email_log was not touched.",
+                        $"Dry run: wrote the {summary.TotalBookingCount}-booking summary for {date:yyyy-MM-dd} to the pickup directory. Nothing was sent and email_log was not touched.{confirmationSuffix}",
                         summary.TotalBookingCount,
                         0);
                 }
@@ -105,7 +113,12 @@ public sealed class DailySummaryMailService(
             if (sendResult.IsSuccess)
             {
                 await emailLogRepository.CompleteAsync(date, EmailSendStatus.Sent, string.Join(";", options.Recipients), summary.TotalBookingCount, null, ct);
-                return new DailySummaryRunResult(EmailSendStatus.Sent, $"Sent to {options.Recipients.Count} recipient(s).", summary.TotalBookingCount, 0);
+
+                // Confirmations are sent only after the summary send is durably recorded as Sent —
+                // the kitchen email is the one that matters, and D1/D2 require it never be put at risk
+                // for the sake of the per-employee courtesy copies.
+                var confirmationSuffix = await SendConfirmationsSafelyAsync(summary, options, dryRun: false, ct);
+                return new DailySummaryRunResult(EmailSendStatus.Sent, $"Sent to {options.Recipients.Count} recipient(s).{confirmationSuffix}", summary.TotalBookingCount, 0);
             }
 
             await emailLogRepository.CompleteAsync(date, EmailSendStatus.Failed, null, summary.TotalBookingCount, sendResult.Message, ct);
@@ -128,6 +141,33 @@ public sealed class DailySummaryMailService(
             }
 
             return new DailySummaryRunResult(EmailSendStatus.Failed, $"Unexpected error: {ex.Message}", 0, 1);
+        }
+    }
+
+    /// <summary>
+    /// Sends the per-employee confirmations for an already-successful summary run and returns a
+    /// human-readable suffix to append to <see cref="DailySummaryRunResult.Message"/>. Gated on
+    /// <see cref="EmailOptions.SendEmployeeConfirmations"/>, and wrapped so that an unexpected
+    /// exception here can never turn this already-successful run into a failure (plan §4 rule 3) —
+    /// the caller's <see cref="DailySummaryRunResult.Status"/>, <see cref="DailySummaryRunResult.BookingCount"/>
+    /// and <see cref="DailySummaryRunResult.SuggestedExitCode"/> are decided by the summary send alone.
+    /// </summary>
+    private async Task<string> SendConfirmationsSafelyAsync(DailySummaryDto summary, EmailOptions options, bool dryRun, CancellationToken ct)
+    {
+        if (!options.SendEmployeeConfirmations)
+        {
+            return string.Empty;
+        }
+
+        try
+        {
+            var outcome = await confirmationSender.SendAllAsync(summary, dryRun, ct);
+            return $" Confirmations: {outcome.Sent} sent, {outcome.SkippedNoEmail} skipped (no email), {outcome.Failed} failed.";
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unexpected error while sending employee lunch confirmations for {Date}.", summary.Date);
+            return " Confirmations: failed to run.";
         }
     }
 }

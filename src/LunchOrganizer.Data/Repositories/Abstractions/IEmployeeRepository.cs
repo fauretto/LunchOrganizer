@@ -20,9 +20,10 @@ public interface IEmployeeRepository
     Task<IReadOnlyList<Employee>> GetAllAsync(bool includeInactive, CancellationToken ct = default);
 
     /// <summary>
-    /// Atomic get-or-create by full name. Must be implemented as a single INSERT ... ON CONFLICT (full_name) DO NOTHING
-    /// followed by a re-select, so that concurrent callers registering the same new name all receive the same
-    /// employee id (see implementation plan §11.6). Never a plain check-then-insert.
+    /// Atomic get-or-create by full name. Must be implemented as a single guarded INSERT (one that
+    /// only inserts if no row with that name already exists) followed by a re-select, so that
+    /// concurrent callers registering the same new name all receive the same employee id (see
+    /// implementation plan §11.6). Never a plain check-then-insert.
     /// </summary>
     Task<Employee> AddAsync(Employee employee, CancellationToken ct = default);
 

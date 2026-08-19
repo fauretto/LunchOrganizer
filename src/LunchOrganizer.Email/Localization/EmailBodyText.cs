@@ -58,4 +58,26 @@ internal static class EmailBodyText
     }
 
     public static string HtmlDocumentTitle(string? language) => HeaderTitle(language);
+
+    // ---- Per-employee booking confirmation strings (plan §4.5) ----
+
+    public static string ConfirmationHeaderTitle(string? language) =>
+        IsFrench(language) ? "Confirmation de votre repas" : "Your lunch booking confirmation";
+
+    public static string ConfirmationGreeting(string? language, string name) =>
+        IsFrench(language) ? $"Bonjour {name}," : $"Hello {name},";
+
+    public static string ConfirmationIntro(string? language, string date) =>
+        IsFrench(language) ? $"Votre repas est confirmé pour le {date} :" : $"Your lunch is confirmed for {date}:";
+
+    public static string ConfirmationMenuLabel(string? language, int menuNumber) => $"Menu {menuNumber}";
+
+    public static string ConfirmationPriceLabel(string? language, decimal price, string currency)
+    {
+        var priceText = price.ToString("0.00", CultureInfo.InvariantCulture);
+        return IsFrench(language) ? $"Prix : {priceText} {currency}" : $"Price: {priceText} {currency}";
+    }
+
+    public static string ConfirmationClosing(string? language) =>
+        IsFrench(language) ? "Bon appétit !" : "Enjoy your meal!";
 }

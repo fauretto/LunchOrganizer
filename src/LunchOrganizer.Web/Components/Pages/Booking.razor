@@ -63,8 +63,25 @@
                 </ul>
             }
 
+            <div class="register-prompt-email">
+                <label for="register-email-input" class="register-prompt-email-label">@Loc["EmployeeRegisterEmailLabel"]</label>
+                <input id="register-email-input"
+                       type="email"
+                       class="register-prompt-email-input"
+                       autocomplete="email"
+                       placeholder="@Loc["EmployeeRegisterEmailPlaceholder"]"
+                       aria-describedby="register-email-why"
+                       @bind="Vm.NewEmployeeEmail"
+                       @bind:event="oninput" />
+                <p id="register-email-why" class="register-prompt-email-why">@Loc["EmployeeRegisterEmailWhy"]</p>
+                @if (Vm.NewEmployeeEmail.Length > 0 && !Vm.IsNewEmployeeEmailValid)
+                {
+                    <p class="register-prompt-email-error" role="alert">@Loc["EmployeeRegisterEmailInvalid"]</p>
+                }
+            </div>
+
             <div class="register-prompt-actions">
-                <button type="button" class="register-prompt-confirm-btn" @onclick="ConfirmRegisterAsync">
+                <button type="button" class="register-prompt-confirm-btn" disabled="@(!Vm.IsNewEmployeeEmailValid)" @onclick="ConfirmRegisterAsync">
                     @Loc["EmployeeRegisterConfirmButton"]
                 </button>
                 <button type="button" class="register-prompt-cancel-btn" @onclick="CancelRegisterAsync">
@@ -268,7 +285,7 @@
 
     private async Task ConfirmRegisterAsync()
     {
-        await Vm.RegisterNewEmployeeAsync(Vm.EmployeeQuery);
+        await Vm.RegisterNewEmployeeAsync(Vm.EmployeeQuery, Vm.NewEmployeeEmail);
     }
 
     private async Task CancelRegisterAsync()

@@ -6,7 +6,6 @@ using LunchOrganizer.Services.Abstractions;
 using LunchOrganizer.Services.Dtos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Npgsql;
 
 namespace LunchOrganizer.Services.Services;
 
@@ -30,14 +29,35 @@ public sealed class EmployeeService(IEmployeeRepository repo, IOptionsMonitor<Ap
         return results.Select(ToDto).ToList();
     }
 
-    public async Task<OperationResult<EmployeeDto>> RegisterAsync(string fullName, CancellationToken ct = default)
+    public async Task<OperationResult<EmployeeDto>> RegisterAsync(string fullName, string? email = null, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(fullName))
         {
             return OperationResult<EmployeeDto>.Fail("Name is required.", ErrorCodes.EmployeeNameRequired);
         }
 
-        var employee = await repo.AddAsync(new Employee { FullName = fullName.Trim(), IsActive = true }, ct);
+        // Whitespace collapses to null, not "", so the database and the sender's IsNullOrWhiteSpace
+        // check agree on what "no address" means.
+        var normalizedEmail = string.IsNullOrWhiteSpace(email) ? null : email.Trim();
+
+        var employee = await repo.AddAsync(new Employee { FullName = fullName.Trim(), Email = normalizedEmail, IsActive = true }, ct);
+
+        // AddAsync is a get-or-create: its guarded INSERT silently skips the insert and returns the
+        // pre-existing row when the name already matches one. The booking page's autocomplete only
+        // searches active employees, so a DEACTIVATED employee typing their name still lands here via
+        // the "register?" prompt — and without this fix, the email they just typed would be silently
+        // discarded and they would stay inactive, while believing they had registered.
+        var needsReactivation = !employee.IsActive;
+        var needsEmail = normalizedEmail is not null && string.IsNullOrWhiteSpace(employee.Email);
+        if (needsReactivation || needsEmail)
+        {
+            if (needsReactivation) employee.IsActive = true;
+            // Never overwrite an existing address with the newly typed one: if the row already has an
+            // email, keep it — silently replacing another record's address is worse than ignoring the input.
+            if (needsEmail) employee.Email = normalizedEmail;
+            await repo.UpdateAsync(employee, ct);
+        }
+
         return OperationResult<EmployeeDto>.Ok(ToDto(employee));
     }
 
@@ -65,7 +85,7 @@ public sealed class EmployeeService(IEmployeeRepository repo, IOptionsMonitor<Ap
         {
             return OperationResult<EmployeeDto>.Fail("Someone else changed this employee.", ErrorCodes.ConcurrencyConflict);
         }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: "23505" })
+        catch (UniqueConstraintViolationException)
         {
             return OperationResult<EmployeeDto>.Fail(
                 "That name is already used by another employee.",

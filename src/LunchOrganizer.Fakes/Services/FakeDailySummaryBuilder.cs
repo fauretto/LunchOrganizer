@@ -29,7 +29,27 @@ internal sealed class FakeDailySummaryBuilder(FakeDataStore store, IClock clock)
             .OrderBy(g => g.MenuNumber)
             .ToList();
 
-        var summary = new DailySummaryDto(date, bookingsForDate.Count, groups, clock.UtcNow);
+        // Mirrors DailySummaryBuilder's EmployeeBookings so the Web project's fake data path stays
+        // representative of the real one (plan §5).
+        var employeeBookings = bookingsForDate
+            .Select(b =>
+            {
+                store.Employees.TryGetValue(b.EmployeeId, out var employee);
+                store.Menus.TryGetValue(b.MenuId, out var menu);
+                return (Booking: b, Employee: employee, Menu: menu);
+            })
+            .Where(t => t.Employee is not null && t.Menu is not null)
+            .OrderBy(t => t.Employee!.FullName, StringComparer.OrdinalIgnoreCase)
+            .Select(t => new EmployeeBookingConfirmationDto(
+                t.Booking.EmployeeId,
+                t.Employee!.FullName,
+                t.Employee!.Email,
+                t.Menu!.MenuNumber,
+                t.Menu!.Description,
+                t.Booking.PriceSnapshot))
+            .ToList();
+
+        var summary = new DailySummaryDto(date, bookingsForDate.Count, groups, clock.UtcNow, employeeBookings);
         return Task.FromResult(OperationResult<DailySummaryDto>.Ok(summary));
     }
 }

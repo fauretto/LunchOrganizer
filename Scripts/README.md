@@ -2,67 +2,111 @@
 
 This folder contains operational scripts for LunchOrganizer that live outside the .NET solution itself.
 
-## Database bootstrap: `create_database.sql` + `create_database.ps1`
+> **Database engine: SQL Server.** The application connects with `UseSqlServer`
+> (`src/LunchOrganizer.Web/Program.cs:62`, `src/LunchOrganizer.Mailer/Program.cs:90`) and is configured
+> through `config/database.json`. An earlier revision targeted PostgreSQL; the two `create_database.*`
+> scripts below are leftovers from that era and **no longer work** — see
+> [Obsolete](#obsolete-create_databasesql--create_databaseps1).
 
-### What they are
+For the full deployment procedure see [`../Docs/DEPLOYMENT.md`](../Docs/DEPLOYMENT.md).
 
-- **`create_database.sql`** — an idempotent SQL script that creates the LunchOrganizer schema (tables, constraints, indexes, etc.). It is generated directly from the real EF Core migration `20260812075601_InitialCreate` via:
+## Database provisioning: the app does it itself
 
-  ```
-  dotnet ef migrations script --idempotent
-  ```
+There is no provisioning script to run. On startup, `DatabaseBootstrapper` (in `LunchOrganizer.Data`)
+creates the database if it is missing and applies any outstanding EF Core migrations, driven by
+`config/database.json`:
 
-  It is **not** hand-written and should not be hand-edited (aside from its header comment) — regenerate it from the migration if the schema changes. It does **not** create the `lunchorganizer` database itself; it only creates objects inside whichever database `psql` is already connected to.
+| Setting | Effect |
+| --- | --- |
+| `AutoCreateDatabase` | When `true`, creates the database if it does not exist |
+| `MaintenanceDatabase` | The database used to connect before the app database exists — `master` for SQL Server |
+| `Seed` | When `true`, inserts starter data after creating the schema |
 
-- **`create_database.ps1`** — a PowerShell 5.1-compatible script that locates `psql.exe`, prompts for connection details, creates the target database if it doesn't already exist, and then runs `create_database.sql` against it.
+Verified on this laptop on 19 August 2026 against a bare SQL Server 2022 Express instance:
 
-### When to use the offline route vs. the app's automatic bootstrap
-
-LunchOrganizer's own startup path can create/migrate its database automatically the first time it runs, using the connection string and role configured for the app. Use **that** route for normal day-to-day development and for environments where the app's database role is allowed to `CREATE DATABASE` / apply migrations itself.
-
-Use this **offline route** (`create_database.ps1` + `create_database.sql`) instead when:
-
-- The target server is locked down and the application's own database role does **not** have permission to `CREATE DATABASE` or run DDL — e.g. a DBA-managed production/staging PostgreSQL instance where only an admin account (like `postgres`) can create databases and schema, and the app's runtime role is granted access afterward.
-- You want to provision the database ahead of time, independently of the application's own startup, using an admin credential rather than the app's runtime credential.
-- You want to re-apply the schema to an existing database safely (both scripts are idempotent/safe to re-run).
-
-### How to run it
-
-From the repo root, or from anywhere — the script resolves its own location and finds `create_database.sql` next to itself:
-
-```powershell
-./Scripts/create_database.ps1
+```
+Applying migration '20260818092820_InitialCreate'.
+Database bootstrap complete: database created, 1 migration(s) applied, seeding skipped.
 ```
 
-(Equivalently: `C:\Projects_Git\Data\GitPerso\LunchOrganizer\Scripts\create_database.ps1` from any working directory.)
+So the deployment order is: configure `config/database.json`, start the Web app once, and the schema
+is in place. The connecting account needs `db_owner` on the database, plus `dbcreator` if
+`AutoCreateDatabase` is to do the creating.
 
-### What it prompts for
+**SQL Server must be a real service.** LocalDB (`(localdb)\MSSQLLocalDB`) cannot be used under IIS —
+it is a per-user engine tied to an interactive session and its `sqlservr.exe` crashes in session 0.
+Use SQL Server Express or a full instance.
 
-1. **`psql.exe` location** — normally found automatically (see below); only prompted for if none of the automatic lookups succeed.
-2. **Host** (default: `localhost`)
-3. **Port** (default: `5432`)
-4. **Username** (default: `postgres`)
-5. **Database name** to create (default: `lunchorganizer`)
-6. **Password** — entered securely (masked input via `Read-Host -AsSecureString`), used only transiently in memory to authenticate the `psql` calls. It is never written to disk, logged, or echoed back, and the environment variable holding it is cleared before the script exits.
+## Deployment: `publish-production.cmd`
 
-The script then:
+Publishes both deployable apps in Release configuration into their own subfolders under an output
+root (default `<repo>\publish`):
 
-- Creates the database if it doesn't already exist (tolerating a race where it gets created concurrently).
-- Runs `create_database.sql` against that database with `ON_ERROR_STOP=1`.
-- Prints a clear success/failure summary and exits non-zero on any failure.
+```powershell
+.\Scripts\publish-production.cmd                    # framework-dependent; server needs the .NET runtime
+.\Scripts\publish-production.cmd -Clean             # wipe the output root first
+.\Scripts\publish-production.cmd -SelfContained     # bundle the runtime (win-x64 by default)
+.\Scripts\publish-production.cmd -OutputRoot C:\publish\LunchOrganizer
+```
 
-### Where `psql.exe` is expected to be found
+From another directory, use the call operator so PowerShell runs the path instead of echoing it:
 
-The script searches, in order, and stops at the first match:
+```powershell
+& 'C:\Projects_Git\Data\GitPerso\LunchOrganizer\Scripts\publish-production.cmd' -Clean
+```
 
-1. `psql` on the `PATH`, if it's ever added there.
-2. The known fixed path on machines set up like this one: **`D:\PostgreSQL\bin\psql.exe`**.
-3. Common install locations on a fresh/typical machine, for portability: **`C:\Program Files\PostgreSQL\16\bin\psql.exe`**, **`C:\Program Files\PostgreSQL\17\bin\psql.exe`**, or any version found by globbing `C:\Program Files\PostgreSQL\*\bin\psql.exe` and `D:\PostgreSQL*\bin\psql.exe`.
-4. The PostgreSQL Windows service registration in the registry (e.g. `postgresql-x64-16`, or any service matching `postgresql*`), deriving `psql.exe`'s location from the service's executable path.
-5. If none of the above find it, you'll be prompted to enter the full path to `psql.exe` interactively.
+Copy the *contents* of `publish\Web\` and `publish\Mailer\` to the server with `robocopy /E`, after
+stopping the application pool. See [`../Docs/DEPLOYMENT.md`](../Docs/DEPLOYMENT.md) §3.
 
-In short: on machines provisioned like this one, expect **`D:\PostgreSQL\bin\psql.exe`**; on a fresh machine with a standard PostgreSQL installer, expect **`C:\Program Files\PostgreSQL\<version>\bin\psql.exe`**.
+### `*.local.json` is never published
 
-## Other scripts
+Both `.csproj` files exclude developer overrides from publish output
+(`CopyToPublishDirectory="Never"`), so they reach `bin\Debug` for local runs but never a server.
+Keep it that way — a `*.local.json` on a server silently overrides the real configuration, which
+caused a two-day outage on 18–19 August 2026. Neither environment uses one now.
 
-- **`register-mailer-task.ps1`** — see the script itself for usage; unrelated to database provisioning.
+## Obsolete: `create_database.sql` + `create_database.ps1`
+
+**These two scripts do not work against the current codebase. Do not run them.** They are kept only
+until the offline provisioning route is rebuilt for SQL Server.
+
+They are broken in two independent ways:
+
+1. **Wrong dialect.** `create_database.sql` is PostgreSQL — it uses `citext` and bare `text` column
+   types and has no `GO` batch separators. `create_database.ps1` drives it with `psql.exe`.
+2. **Generated from a migration that no longer exists.** Its header records that it came from
+   `20260812075601_InitialCreate`, which was removed during the SQL Server migration and replaced by
+   `20260818092820_InitialCreate`.
+
+### Rebuilding the offline route for SQL Server
+
+Only needed for a DBA-managed server where the application's own login may not create databases or
+run DDL. Regenerate the SQL from the current migration (this emits SQL Server syntax with `GO`
+separators):
+
+```powershell
+dotnet ef migrations script --idempotent `
+  --project src/LunchOrganizer.Data/LunchOrganizer.Data.csproj `
+  --startup-project src/LunchOrganizer.Data/LunchOrganizer.Data.csproj `
+  --output Scripts/create_database.sql
+```
+
+Then rewrite `create_database.ps1` to drive `sqlcmd.exe` instead of `psql.exe` — connecting with
+`-S <server> -E` for Windows authentication, creating the database with a `CREATE DATABASE` guarded
+by `IF DB_ID(...) IS NULL`, and running the script with `-b` so it stops on error. `sqlcmd` is the
+runner that understands the `GO` separators the generated script contains.
+
+## The daily email: `register-mailer-task.ps1` + `register-mailer-task.cmd`
+
+Registers the daily summary email as a Windows scheduled task.
+
+```
+Scripts\register-mailer-task.cmd -ExecutablePath "D:\Data\WebSites\LunchOrganizer\Mailer\LunchOrganizer.Mailer.exe" -TimeLocal "09:01"
+```
+
+Run the `.cmd`, not the `.ps1`: Group Policy blocks direct `.ps1` execution on this machine and
+overrides `-ExecutionPolicy Bypass`, so the wrapper reads the script text and invokes it as a
+`[scriptblock]` instead. It also self-elevates via UAC.
+
+The task defaults to running as `SYSTEM`, which is fine provided that account has a SQL login with
+`db_owner`. Otherwise pass `-UserName <domain\account> -Password <password>`.

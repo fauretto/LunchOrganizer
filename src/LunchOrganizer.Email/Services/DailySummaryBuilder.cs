@@ -48,7 +48,22 @@ public sealed class DailySummaryBuilder(
             .OrderBy(g => g.MenuNumber)
             .ToList();
 
-        var summary = new DailySummaryDto(date, bookings.Count, groups, clock.UtcNow);
+        // Same rows, same guard, as the menu grouping above — carried out of the one query the
+        // summary already runs so the confirmation feature needs no second repository call
+        // (plan §4.3, and the one-query rule in plan §11.8).
+        var employeeBookings = bookings
+            .Where(b => b.Menu is not null && b.Employee is not null)
+            .OrderBy(b => b.Employee!.FullName, comparer)
+            .Select(b => new EmployeeBookingConfirmationDto(
+                b.EmployeeId,
+                b.Employee!.FullName,
+                b.Employee!.Email,
+                b.Menu!.MenuNumber,
+                b.Menu!.Description,
+                b.PriceSnapshot))
+            .ToList();
+
+        var summary = new DailySummaryDto(date, bookings.Count, groups, clock.UtcNow, employeeBookings);
         return OperationResult<DailySummaryDto>.Ok(summary);
     }
 }

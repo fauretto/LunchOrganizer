@@ -100,6 +100,18 @@
   <data name="EmployeeRegisterCancelButton" xml:space="preserve">
     <value>Non, annuler</value>
   </data>
+  <data name="EmployeeRegisterEmailLabel" xml:space="preserve">
+    <value>Adresse e-mail</value>
+  </data>
+  <data name="EmployeeRegisterEmailPlaceholder" xml:space="preserve">
+    <value>nom@entreprise.com</value>
+  </data>
+  <data name="EmployeeRegisterEmailWhy" xml:space="preserve">
+    <value>Nous enverrons la confirmation de votre réservation à cette adresse.</value>
+  </data>
+  <data name="EmployeeRegisterEmailInvalid" xml:space="preserve">
+    <value>Veuillez saisir une adresse e-mail valide.</value>
+  </data>
   <data name="EmployeeNoMatches" xml:space="preserve">
     <value>Aucun résultat</value>
   </data>

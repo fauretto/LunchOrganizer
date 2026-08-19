@@ -14,37 +14,43 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
 
         builder.Property(e => e.Id)
             .HasColumnName("id")
-            .UseIdentityAlwaysColumn();
+            .UseIdentityColumn();
 
         builder.Property(e => e.FullName)
             .HasColumnName("full_name")
-            .HasColumnType("citext")
+            .HasColumnType("nvarchar(200)")
+            .UseCollation("Latin1_General_CI_AS")
             .IsRequired();
 
         builder.Property(e => e.Email)
             .HasColumnName("email")
-            .HasColumnType("text");
+            .HasColumnType("nvarchar(max)");
 
         builder.Property(e => e.IsActive)
             .HasColumnName("is_active")
-            .HasColumnType("boolean")
+            .HasColumnType("bit")
             .IsRequired()
             .HasDefaultValue(true);
 
         builder.Property(e => e.CreatedAtUtc)
             .HasColumnName("created_at_utc")
-            .HasColumnType("timestamptz")
+            .HasColumnType("datetimeoffset(7)")
             .IsRequired()
-            .HasDefaultValueSql("now()");
+            .HasDefaultValueSql("CAST(SYSUTCDATETIME() AS datetimeoffset)");
 
         builder.Property(e => e.UpdatedAtUtc)
             .HasColumnName("updated_at_utc")
-            .HasColumnType("timestamptz")
+            .HasColumnType("datetimeoffset(7)")
             .IsRequired()
-            .HasDefaultValueSql("now()");
+            .HasDefaultValueSql("CAST(SYSUTCDATETIME() AS datetimeoffset)");
 
+        // PostgreSQL's xmin was server-maintained; SQL Server has no equivalent, so the concurrency
+        // token becomes an app-managed bigint (see LunchOrganizerDbContext.ApplyVersionMaintenance).
         builder.Property(e => e.Version)
-            .IsRowVersion();
+            .HasColumnName("version")
+            .HasColumnType("bigint")
+            .IsConcurrencyToken()
+            .HasDefaultValueSql("1");
 
         builder.HasIndex(e => e.FullName)
             .IsUnique()

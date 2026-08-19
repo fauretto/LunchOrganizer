@@ -100,6 +100,18 @@
   <data name="EmployeeRegisterCancelButton" xml:space="preserve">
     <value>No, cancel</value>
   </data>
+  <data name="EmployeeRegisterEmailLabel" xml:space="preserve">
+    <value>Email address</value>
+  </data>
+  <data name="EmployeeRegisterEmailPlaceholder" xml:space="preserve">
+    <value>name@company.com</value>
+  </data>
+  <data name="EmployeeRegisterEmailWhy" xml:space="preserve">
+    <value>We will send your lunch booking confirmation to this address.</value>
+  </data>
+  <data name="EmployeeRegisterEmailInvalid" xml:space="preserve">
+    <value>Please enter a valid email address.</value>
+  </data>
   <data name="EmployeeNoMatches" xml:space="preserve">
     <value>No matches</value>
   </data>

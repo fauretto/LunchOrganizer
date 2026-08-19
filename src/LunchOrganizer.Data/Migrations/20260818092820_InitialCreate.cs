@@ -1,6 +1,5 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -12,18 +11,15 @@ namespace LunchOrganizer.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AlterDatabase()
-                .Annotation("Npgsql:PostgresExtension:citext", ",,");
-
             migrationBuilder.CreateTable(
                 name: "daily_prices",
                 columns: table => new
                 {
                     price_date = table.Column<DateOnly>(type: "date", nullable: false),
-                    price = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
-                    created_at_utc = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false, defaultValueSql: "now()"),
-                    updated_at_utc = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false, defaultValueSql: "now()"),
-                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false)
+                    price = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
+                    created_at_utc = table.Column<DateTimeOffset>(type: "datetimeoffset(7)", nullable: false, defaultValueSql: "CAST(SYSUTCDATETIME() AS datetimeoffset)"),
+                    updated_at_utc = table.Column<DateTimeOffset>(type: "datetimeoffset(7)", nullable: false, defaultValueSql: "CAST(SYSUTCDATETIME() AS datetimeoffset)"),
+                    version = table.Column<long>(type: "bigint", nullable: false, defaultValueSql: "1")
                 },
                 constraints: table =>
                 {
@@ -36,11 +32,11 @@ namespace LunchOrganizer.Data.Migrations
                 columns: table => new
                 {
                     summary_date = table.Column<DateOnly>(type: "date", nullable: false),
-                    sent_at_utc = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false),
-                    status = table.Column<string>(type: "text", nullable: false),
-                    recipients = table.Column<string>(type: "text", nullable: true),
-                    booking_count = table.Column<int>(type: "integer", nullable: false),
-                    error_message = table.Column<string>(type: "text", nullable: true)
+                    sent_at_utc = table.Column<DateTimeOffset>(type: "datetimeoffset(7)", nullable: false),
+                    status = table.Column<string>(type: "nvarchar(20)", nullable: false),
+                    recipients = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    booking_count = table.Column<int>(type: "int", nullable: false),
+                    error_message = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -51,14 +47,14 @@ namespace LunchOrganizer.Data.Migrations
                 name: "employees",
                 columns: table => new
                 {
-                    id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
-                    full_name = table.Column<string>(type: "citext", nullable: false),
-                    email = table.Column<string>(type: "text", nullable: true),
-                    is_active = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
-                    created_at_utc = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false, defaultValueSql: "now()"),
-                    updated_at_utc = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false, defaultValueSql: "now()"),
-                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false)
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    full_name = table.Column<string>(type: "nvarchar(200)", nullable: false, collation: "Latin1_General_CI_AS"),
+                    email = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    is_active = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    created_at_utc = table.Column<DateTimeOffset>(type: "datetimeoffset(7)", nullable: false, defaultValueSql: "CAST(SYSUTCDATETIME() AS datetimeoffset)"),
+                    updated_at_utc = table.Column<DateTimeOffset>(type: "datetimeoffset(7)", nullable: false, defaultValueSql: "CAST(SYSUTCDATETIME() AS datetimeoffset)"),
+                    version = table.Column<long>(type: "bigint", nullable: false, defaultValueSql: "1")
                 },
                 constraints: table =>
                 {
@@ -69,14 +65,14 @@ namespace LunchOrganizer.Data.Migrations
                 name: "menus",
                 columns: table => new
                 {
-                    id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     menu_date = table.Column<DateOnly>(type: "date", nullable: false),
-                    menu_number = table.Column<int>(type: "integer", nullable: false),
-                    description = table.Column<string>(type: "text", nullable: true),
-                    created_at_utc = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false, defaultValueSql: "now()"),
-                    updated_at_utc = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false, defaultValueSql: "now()"),
-                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false)
+                    menu_number = table.Column<int>(type: "int", nullable: false),
+                    description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    created_at_utc = table.Column<DateTimeOffset>(type: "datetimeoffset(7)", nullable: false, defaultValueSql: "CAST(SYSUTCDATETIME() AS datetimeoffset)"),
+                    updated_at_utc = table.Column<DateTimeOffset>(type: "datetimeoffset(7)", nullable: false, defaultValueSql: "CAST(SYSUTCDATETIME() AS datetimeoffset)"),
+                    version = table.Column<long>(type: "bigint", nullable: false, defaultValueSql: "1")
                 },
                 constraints: table =>
                 {
@@ -89,15 +85,15 @@ namespace LunchOrganizer.Data.Migrations
                 name: "bookings",
                 columns: table => new
                 {
-                    id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
-                    employee_id = table.Column<int>(type: "integer", nullable: false),
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    employee_id = table.Column<int>(type: "int", nullable: false),
                     booking_date = table.Column<DateOnly>(type: "date", nullable: false),
-                    menu_id = table.Column<int>(type: "integer", nullable: false),
-                    price_snapshot = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
-                    created_at_utc = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false, defaultValueSql: "now()"),
-                    updated_at_utc = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false, defaultValueSql: "now()"),
-                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false)
+                    menu_id = table.Column<int>(type: "int", nullable: false),
+                    price_snapshot = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
+                    created_at_utc = table.Column<DateTimeOffset>(type: "datetimeoffset(7)", nullable: false, defaultValueSql: "CAST(SYSUTCDATETIME() AS datetimeoffset)"),
+                    updated_at_utc = table.Column<DateTimeOffset>(type: "datetimeoffset(7)", nullable: false, defaultValueSql: "CAST(SYSUTCDATETIME() AS datetimeoffset)"),
+                    version = table.Column<long>(type: "bigint", nullable: false, defaultValueSql: "1")
                 },
                 constraints: table =>
                 {

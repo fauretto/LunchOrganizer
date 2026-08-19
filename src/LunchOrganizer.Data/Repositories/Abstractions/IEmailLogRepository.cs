@@ -9,9 +9,9 @@ namespace LunchOrganizer.Data.Repositories.Abstractions;
 public interface IEmailLogRepository
 {
     /// <summary>
-    /// Reserves the day for sending by executing INSERT INTO email_log (summary_date, ...) VALUES (...)
-    /// ON CONFLICT (summary_date) DO NOTHING. Returns true if this call reserved the day (zero rows previously
-    /// existed), false if another process already owns the day. Callers that get false must stop and not send
+    /// Reserves the day for sending via a guarded INSERT that only succeeds if no row for the date
+    /// already exists. Returns true if this call reserved the day (zero rows previously existed),
+    /// false if another process already owns the day. Callers that get false must stop and not send
     /// (see implementation plan §11.8) — this is the sole idempotency guarantee against double sends.
     /// </summary>
     Task<bool> TryBeginAsync(DateOnly date, CancellationToken ct = default);

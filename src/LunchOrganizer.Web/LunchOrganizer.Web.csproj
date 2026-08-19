@@ -16,7 +16,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="../../config/*.json" Link="config/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../config/*.json" Exclude="../../config/*.local.json" Link="config/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Developer-only overrides: copied next to the build output for local runs, but never published -
+         a *.local.json reaching a server silently overrides the real config there. -->
+    <None Include="../../config/*.local.json" Link="config/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
   </ItemGroup>
 
   <PropertyGroup>

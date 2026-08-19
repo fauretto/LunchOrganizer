@@ -3,6 +3,7 @@ using LunchOrganizer.Domain.Common;
 using LunchOrganizer.Domain.Configuration;
 using LunchOrganizer.Domain.Enums;
 using LunchOrganizer.Domain.Time;
+using LunchOrganizer.Email.Validation;
 using LunchOrganizer.Services.Abstractions;
 using LunchOrganizer.Services.Dtos;
 using LunchOrganizer.Web.Components.Shared.Toasts;
@@ -44,6 +45,7 @@ public sealed class BookingViewModel : ViewModelBase
     private WeekViewDto? _selectedWeekView;
     private DayViewDto? _todayView;
     private string _employeeQuery = string.Empty;
+    private string _newEmployeeEmail = string.Empty;
     private IReadOnlyList<EmployeeDto> _suggestions = Array.Empty<EmployeeDto>();
     private EmployeeDto? _selectedEmployee;
     private bool _showRegisterPrompt;
@@ -125,6 +127,19 @@ public sealed class BookingViewModel : ViewModelBase
         get => _employeeQuery;
         set => SetProperty(ref _employeeQuery, value);
     }
+
+    /// <summary>
+    /// Bound to the register-prompt's email input. Public setter (unlike <see cref="ShowRegisterPrompt"/>)
+    /// because it two-way-binds directly from the page.
+    /// </summary>
+    public string NewEmployeeEmail
+    {
+        get => _newEmployeeEmail;
+        set => SetProperty(ref _newEmployeeEmail, value);
+    }
+
+    /// <summary>Whether <see cref="NewEmployeeEmail"/> currently holds a well-formed address.</summary>
+    public bool IsNewEmployeeEmailValid => EmailAddressValidation.IsValidFormat(NewEmployeeEmail);
 
     public IReadOnlyList<EmployeeDto> Suggestions
     {
@@ -297,6 +312,7 @@ public sealed class BookingViewModel : ViewModelBase
             Suggestions = Array.Empty<EmployeeDto>();
             SimilarNames = Array.Empty<EmployeeDto>();
             ShowRegisterPrompt = false;
+            NewEmployeeEmail = string.Empty;
             return;
         }
 
@@ -328,13 +344,20 @@ public sealed class BookingViewModel : ViewModelBase
 
     public Task SelectEmployeeAsync(EmployeeDto employee) => RunGuardedAsync(() => SelectEmployeeInternalAsync(employee));
 
-    public async Task<bool> RegisterNewEmployeeAsync(string fullName)
+    public async Task<bool> RegisterNewEmployeeAsync(string fullName, string email)
     {
+        // Invalid address: reject before ever calling the service, and without a toast — the page
+        // shows an inline hint instead, and a toast for a field the user is still typing would be noise.
+        if (!EmailAddressValidation.IsValidFormat(email))
+        {
+            return false;
+        }
+
         var result = false;
 
         await RunGuardedAsync(async () =>
         {
-            var opResult = await _employeeService.RegisterAsync(fullName);
+            var opResult = await _employeeService.RegisterAsync(fullName, email);
 
             if (opResult.IsSuccess)
             {
@@ -572,6 +595,7 @@ public sealed class BookingViewModel : ViewModelBase
         Suggestions = Array.Empty<EmployeeDto>();
         SimilarNames = Array.Empty<EmployeeDto>();
         ShowRegisterPrompt = false;
+        NewEmployeeEmail = string.Empty;
 
         await ReloadSelectedWeekViewAsync();
         await ReloadTodayViewAsync();

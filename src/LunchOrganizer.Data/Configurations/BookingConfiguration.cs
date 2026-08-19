@@ -15,11 +15,11 @@ public class BookingConfiguration : IEntityTypeConfiguration<Booking>
 
         builder.Property(b => b.Id)
             .HasColumnName("id")
-            .UseIdentityAlwaysColumn();
+            .UseIdentityColumn();
 
         builder.Property(b => b.EmployeeId)
             .HasColumnName("employee_id")
-            .HasColumnType("integer")
+            .HasColumnType("int")
             .IsRequired();
 
         builder.Property(b => b.BookingDate)
@@ -29,28 +29,33 @@ public class BookingConfiguration : IEntityTypeConfiguration<Booking>
 
         builder.Property(b => b.MenuId)
             .HasColumnName("menu_id")
-            .HasColumnType("integer")
+            .HasColumnType("int")
             .IsRequired();
 
         builder.Property(b => b.PriceSnapshot)
             .HasColumnName("price_snapshot")
-            .HasColumnType("numeric(10,2)")
+            .HasColumnType("decimal(10,2)")
             .IsRequired();
 
         builder.Property(b => b.CreatedAtUtc)
             .HasColumnName("created_at_utc")
-            .HasColumnType("timestamptz")
+            .HasColumnType("datetimeoffset(7)")
             .IsRequired()
-            .HasDefaultValueSql("now()");
+            .HasDefaultValueSql("CAST(SYSUTCDATETIME() AS datetimeoffset)");
 
         builder.Property(b => b.UpdatedAtUtc)
             .HasColumnName("updated_at_utc")
-            .HasColumnType("timestamptz")
+            .HasColumnType("datetimeoffset(7)")
             .IsRequired()
-            .HasDefaultValueSql("now()");
+            .HasDefaultValueSql("CAST(SYSUTCDATETIME() AS datetimeoffset)");
 
+        // PostgreSQL's xmin was server-maintained; SQL Server has no equivalent, so the concurrency
+        // token becomes an app-managed bigint (see LunchOrganizerDbContext.ApplyVersionMaintenance).
         builder.Property(b => b.Version)
-            .IsRowVersion();
+            .HasColumnName("version")
+            .HasColumnType("bigint")
+            .IsConcurrencyToken()
+            .HasDefaultValueSql("1");
 
         builder.HasIndex(b => new { b.EmployeeId, b.BookingDate })
             .IsUnique()

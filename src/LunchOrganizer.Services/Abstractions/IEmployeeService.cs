@@ -9,8 +9,13 @@ public interface IEmployeeService
     Task<EmployeeDto?> GetByIdAsync(int id, CancellationToken ct = default);
     Task<IReadOnlyList<EmployeeDto>> GetAllAsync(bool includeInactive, CancellationToken ct = default);
 
-    /// <summary>Atomic get-or-create by name (see IEmployeeRepository.AddAsync contract, plan §11.6).</summary>
-    Task<OperationResult<EmployeeDto>> RegisterAsync(string fullName, CancellationToken ct = default);
+    /// <summary>
+    /// Atomic get-or-create by name (see IEmployeeRepository.AddAsync contract, plan §11.6).
+    /// <paramref name="email"/> is optional so the admin "add employee" call site
+    /// (<c>AdminEmployeesViewModel.cs</c>) keeps compiling unchanged — email stays optional for
+    /// admin-created employees by design; only the booking page's self-registration path enforces it.
+    /// </summary>
+    Task<OperationResult<EmployeeDto>> RegisterAsync(string fullName, string? email = null, CancellationToken ct = default);
 
     Task<OperationResult<EmployeeDto>> UpdateAsync(int id, string fullName, string? email, CancellationToken ct = default);
 

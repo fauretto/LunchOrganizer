@@ -43,7 +43,22 @@ To publish and install LunchOrganizer on a server:
    configuring `config/*.json`, hosting the website (**IIS** or **Windows Service /
    Kestrel**), and registering the daily Mailer with Windows Task Scheduler.
 
-3. **Register the daily email job** on the server (elevated PowerShell):
-   ```powershell
-   .\Scripts\register-mailer-task.ps1 -ExecutablePath 'C:\Apps\LunchOrganizer.Mailer\LunchOrganizer.Mailer.exe' -TimeLocal '09:01'
+3. **Register the daily email job** on the server. Use the `.cmd` wrapper — it self-elevates, and
+   on machines where Group Policy blocks `.ps1` execution it is the only thing that works:
    ```
+   Scripts\register-mailer-task.cmd -ExecutablePath "C:\Apps\LunchOrganizer.Mailer\LunchOrganizer.Mailer.exe" -TimeLocal "09:01"
+   ```
+   Add `-UserName <domain\user> -Password <password>` if the database is only reachable by a
+   specific account — the task otherwise runs as `SYSTEM`.
+
+### Step-by-step procedures
+
+| Task | Procedure |
+|---|---|
+| Release a new version to the **production server** | [`Docs/PUBLISH_TO_PRODUCTION_SERVER.md`](Docs/PUBLISH_TO_PRODUCTION_SERVER.md) |
+| Run the site on **this laptop** under IIS | [`Docs/RUN_LOCALLY_UNDER_IIS.md`](Docs/RUN_LOCALLY_UNDER_IIS.md) |
+| Background, permissions, troubleshooting | [`Docs/DEPLOYMENT.md`](Docs/DEPLOYMENT.md) |
+
+Both procedures start with the same script — `Scripts\publish-production.cmd`. Note that building in
+Release inside Visual Studio is **not** sufficient on its own: it produces `bin\Release\`, which has
+no IIS `web.config` and is not deployable. The script performs the publish for you.
