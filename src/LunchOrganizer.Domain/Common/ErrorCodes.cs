@@ -64,4 +64,35 @@ public static class ErrorCodes
 
     /// <summary>An unexpected, non-business failure occurred.</summary>
     public const string Unexpected = "Unexpected";
+
+    /// <summary>The uploaded file is not a readable Word (.docx) document (not a ZIP, no word/document.xml, or malformed XML).</summary>
+    public const string MenuImportInvalidDocument = "MenuImportInvalidDocument";
+
+    /// <summary>The uploaded menu-import file exceeds the maximum allowed size. arg0: maximum allowed size in MB.</summary>
+    public const string MenuImportFileTooLarge = "MenuImportFileTooLarge";
+
+    /// <summary>The document contained no recognizable menu data.</summary>
+    public const string MenuImportNoDataFound = "MenuImportNoDataFound";
+
+    /// <summary>A day cell in the document could not be resolved to a valid date. arg0: the offending day cell text.</summary>
+    public const string MenuImportInvalidDate = "MenuImportInvalidDate";
+
+    /// <summary>The resolved dates in the document are not in chronological order. arg0: the previous resolved date, arg1: the offending day cell text.</summary>
+    public const string MenuImportDatesNotChronological = "MenuImportDatesNotChronological";
+
+    /// <summary>The same date appears more than once within the imported document. arg0: the date that appears more than once.</summary>
+    public const string MenuImportDuplicateInDocument = "MenuImportDuplicateInDocument";
+
+    /// <summary>
+    /// A day row the document labels as a working day (Monday–Friday) resolves onto a Saturday or
+    /// Sunday for the selected year — near-certain proof the wrong year was chosen.
+    /// arg0: the offending day cell text. arg1: the resolved date.
+    /// </summary>
+    public const string MenuImportWeekdayMismatch = "MenuImportWeekdayMismatch";
+
+    /// <summary>The database already contains menus for one or more of the imported dates. arg0: count of conflicting dates, arg1: the conflicting dates as a pre-joined string.</summary>
+    public const string MenuImportDuplicateMenusExist = "MenuImportDuplicateMenusExist";
+
+    /// <summary>An unexpected failure occurred while importing the document; nothing was saved.</summary>
+    public const string MenuImportFailed = "MenuImportFailed";
 }

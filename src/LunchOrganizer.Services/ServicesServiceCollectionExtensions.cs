@@ -1,5 +1,6 @@
 using LunchOrganizer.Domain.Time;
 using LunchOrganizer.Services.Abstractions;
+using LunchOrganizer.Services.Import;
 using LunchOrganizer.Services.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -21,6 +22,8 @@ public static class ServicesServiceCollectionExtensions
         services.AddScoped<IMenuService, MenuService>();
         services.AddScoped<IBookingService, BookingService>();
         services.AddScoped<IReportService, ReportService>();
+        services.AddScoped<IMenuDocumentParser, MenuDocumentParser>();
+        services.AddScoped<IMenuImportService, MenuImportService>();
 
         return services;
     }

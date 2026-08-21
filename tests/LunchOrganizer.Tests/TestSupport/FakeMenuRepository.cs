@@ -1,4 +1,5 @@
 using LunchOrganizer.Data.Repositories.Abstractions;
+using LunchOrganizer.Domain.Common;
 using LunchOrganizer.Domain.Entities;
 
 namespace LunchOrganizer.Tests.TestSupport;
@@ -39,6 +40,42 @@ public sealed class FakeMenuRepository : IMenuRepository
         menu.Id = _nextId++;
         _menus[menu.Id] = menu;
         return Task.FromResult(menu);
+    }
+
+    /// <summary>
+    /// Reproduces the real repository's all-or-nothing import behaviour closely enough for service-level
+    /// tests: throws <see cref="MenuImportConflictException"/> when any date in <paramref name="menus"/>
+    /// already has a menu, and otherwise inserts the whole batch. Unlike the real implementation, there is
+    /// no transaction to roll back here — the conflict check simply happens before any mutation, so this
+    /// fake can never leave partial data either.
+    /// </summary>
+    public Task ImportAsync(IReadOnlyList<Menu> menus, CancellationToken ct = default)
+    {
+        if (menus.Count == 0)
+        {
+            return Task.CompletedTask;
+        }
+
+        var importDates = menus.Select(m => m.MenuDate).ToHashSet();
+        var conflicts = _menus.Values
+            .Select(m => m.MenuDate)
+            .Where(importDates.Contains)
+            .Distinct()
+            .OrderBy(d => d)
+            .ToList();
+
+        if (conflicts.Count > 0)
+        {
+            throw new MenuImportConflictException(conflicts);
+        }
+
+        foreach (var menu in menus)
+        {
+            menu.Id = _nextId++;
+            _menus[menu.Id] = menu;
+        }
+
+        return Task.CompletedTask;
     }
 
     public Task UpdateAsync(Menu menu, CancellationToken ct = default)

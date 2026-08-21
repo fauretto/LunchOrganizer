@@ -1,3 +1,4 @@
+using LunchOrganizer.Domain.Common;
 using LunchOrganizer.Domain.Entities;
 
 namespace LunchOrganizer.Data.Repositories.Abstractions;
@@ -40,4 +41,28 @@ public interface IMenuRepository
 
     /// <summary>Computes the next available menu number for the given date.</summary>
     Task<int> GetNextMenuNumberAsync(DateOnly date, CancellationToken ct = default);
+
+    /// <summary>
+    /// Imports a whole batch of menus as a single all-or-nothing operation: every menu in
+    /// <paramref name="menus"/> is inserted inside one <see cref="Microsoft.EntityFrameworkCore.DbContext"/>
+    /// and one explicit database transaction, so either all of them are written or none are.
+    /// </summary>
+    /// <remarks>
+    /// The duplicate pre-check (is there already a menu for any date in the batch?) and the insert
+    /// itself run inside that same transaction, as one unit. If the check finds that the database
+    /// already has at least one menu row for any date in the batch, the transaction is rolled back —
+    /// nothing is written — and a <see cref="MenuImportConflictException"/> is thrown. A concurrent
+    /// importer that manages to win the race between that check and this insert is instead caught via
+    /// the unique index <c>ix_menus_menu_date_menu_number</c> rejecting the insert; that case is
+    /// likewise rolled back and surfaced to the caller as the same <see cref="MenuImportConflictException"/>.
+    /// Any other failure rolls back the transaction and rethrows the original exception unchanged.
+    /// <para>
+    /// This cannot be built by simply calling <see cref="AddAsync"/> in a loop: each <see cref="AddAsync"/>
+    /// call opens its own <see cref="Microsoft.EntityFrameworkCore.DbContext"/> and commits immediately
+    /// (see its implementation), so a failure partway through such a loop would leave the earlier,
+    /// already-committed menus in place while the rest are missing — the exact partial-data outcome
+    /// this method exists to prevent.
+    /// </para>
+    /// </remarks>
+    Task ImportAsync(IReadOnlyList<Menu> menus, CancellationToken ct = default);
 }

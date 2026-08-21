@@ -97,6 +97,33 @@
   <data name="MaxMenusPerDayReached" xml:space="preserve">
     <value>Ce jour compte déjà le maximum de {0} menus. Supprimez-en un avant d’en ajouter un autre.</value>
   </data>
+  <data name="MenuImportInvalidDocument" xml:space="preserve">
+    <value>Le fichier n’est pas un document Word (.docx) valide, ou il est endommagé. Rien n’a été importé.</value>
+  </data>
+  <data name="MenuImportFileTooLarge" xml:space="preserve">
+    <value>Le fichier est trop volumineux (maximum {0} Mo). Rien n’a été importé.</value>
+  </data>
+  <data name="MenuImportNoDataFound" xml:space="preserve">
+    <value>Aucun menu n’a été trouvé dans ce document. Vérifiez qu’il utilise la mise en page hebdomadaire attendue, avec une ligne par jour et une colonne par menu. Rien n’a été importé.</value>
+  </data>
+  <data name="MenuImportInvalidDate" xml:space="preserve">
+    <value>Le document contient une date invalide : « {0} ». Vérifiez le jour et le mois, ainsi que l’année sélectionnée. Rien n’a été importé.</value>
+  </data>
+  <data name="MenuImportDatesNotChronological" xml:space="preserve">
+    <value>Les jours de ce document ne sont pas dans l’ordre chronologique : « {1} » vient après {0}. Rien n’a été importé.</value>
+  </data>
+  <data name="MenuImportWeekdayMismatch" xml:space="preserve">
+    <value>Les noms de jours de ce document ne correspondent pas à l’année sélectionnée : « {0} » tombe un week-end ({1}). Sélectionnez la bonne année et réessayez. Rien n’a été importé.</value>
+  </data>
+  <data name="MenuImportDuplicateInDocument" xml:space="preserve">
+    <value>Le document contient {0} à plusieurs reprises. Supprimez la semaine dupliquée et réessayez. Rien n’a été importé.</value>
+  </data>
+  <data name="MenuImportDuplicateMenusExist" xml:space="preserve">
+    <value>Importation annulée : la base de données contient déjà des menus pour {0} des dates de ce fichier ({1}). Supprimez d’abord ces menus, ou importez un autre fichier. Rien n’a été importé.</value>
+  </data>
+  <data name="MenuImportFailed" xml:space="preserve">
+    <value>L’importation a échoué et rien n’a été enregistré. Veuillez réessayer ; si le problème persiste, consultez le journal de l’application.</value>
+  </data>
   <data name="PriceInvalid" xml:space="preserve">
     <value>Entrez un prix comme 12.50 ou 12,50.</value>
   </data>

@@ -1,0 +1,23 @@
+{
+  "Email": {
+    "Mode": "Smtp",
+    "SmtpHost": "desmtp.cohu.com",
+    "SmtpPort": 25,
+    "UseStartTls": false,
+    "Username": "",
+    "Password": "",
+    "SenderName": "COHU Lunch Organizer",
+    "SenderAddress": "no-reply@cohu.com",
+    "Recipients": ["massimo.fauro@gmail.com"],
+    "SubjectPrefix": "Repas réservés pour COHU le ",
+    "SubjectDateFormat": "dd.MM.yyyy",
+    "Language": "fr",
+    "SendTimeLocal": "09:01:00",
+    "WorkingDays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    "SkipWhenNoBookings": true,
+    "PickupDirectory": "./mail-drop",
+    "EnableInAppScheduler": true,
+    "SendEmployeeConfirmations": true,
+    "ConfirmationSubjectPrefix": "Confirmation - "
+  }
+}

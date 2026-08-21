@@ -11,6 +11,12 @@
 
 <div class="menus-panel">
     <div class="no-print">
+        <div class="menus-panel-toolbar">
+            <button type="button" class="menus-import-button" disabled="@Vm.IsBusy" @onclick="Vm.OpenImportDialog">
+                @Loc["MenusImportButton"]
+            </button>
+        </div>
+
         <WeekPicker CurrentWeek="Vm.CurrentWeek"
                     SelectedWeek="Vm.SelectedWeek"
                     OnThisWeek="Vm.GoToThisWeekAsync"
@@ -68,6 +74,8 @@
             }
         </section>
     }
+
+    <MenuImportDialog />
 </div>
 
 @code {

@@ -1,3 +1,6 @@
+using System.Globalization;
+using LunchOrganizer.Domain;
+using LunchOrganizer.Domain.Common;
 using LunchOrganizer.Domain.Configuration;
 using LunchOrganizer.Domain.Time;
 using LunchOrganizer.Services.Abstractions;
@@ -6,6 +9,7 @@ using LunchOrganizer.Web.Components.Shared.Confirmation;
 using LunchOrganizer.Web.Components.Shared.Toasts;
 using LunchOrganizer.Web.Localization;
 using LunchOrganizer.Web.Resources;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 
@@ -20,6 +24,12 @@ namespace LunchOrganizer.Web.ViewModels;
 /// <see cref="SelectedWeek"/> to <see cref="CurrentWeek"/> for past dates: admins are allowed (and
 /// expected) to browse past weeks to review/fix historical menus for record-keeping. Delete/add
 /// actions on past dates are still correctly blocked by the service/UI rules elsewhere in this file.
+///
+/// Also owns the Word (.docx) menu import flow: <see cref="OpenImportDialog"/>/
+/// <see cref="CloseImportDialog"/> control <see cref="MenuImportDialog"/>'s visibility,
+/// <see cref="OnImportFileSelectedAsync"/> buffers the uploaded file, and <see cref="RunImportAsync"/>
+/// previews (for the weekday-mismatch confirmation), then commits, the import via
+/// <see cref="IMenuImportService"/>.
 /// </summary>
 public sealed class AdminMenusViewModel : ViewModelBase
 {
@@ -34,6 +44,7 @@ public sealed class AdminMenusViewModel : ViewModelBase
     private readonly IErrorMessageResolver _errorResolver;
     private readonly IToastService _toastService;
     private readonly IConfirmDialogService _confirmDialogService;
+    private readonly IMenuImportService _menuImportService;
 
     private bool _initialized;
 
@@ -51,6 +62,17 @@ public sealed class AdminMenusViewModel : ViewModelBase
 
     private readonly Dictionary<DateOnly, string> _newMenuDrafts = new();
 
+    private bool _isImportDialogOpen;
+    private int _importYear;
+    private string? _importFileName;
+    private string? _importErrorMessage;
+
+    /// <summary>
+    /// Buffered copy of the uploaded .docx, seekable and reusable across the preview + commit calls.
+    /// See <see cref="OnImportFileSelectedAsync"/> for why buffering is necessary.
+    /// </summary>
+    private MemoryStream? _importFileContent;
+
     public AdminMenusViewModel(
         IMenuService menuService,
         IPricingService pricingService,
@@ -62,7 +84,8 @@ public sealed class AdminMenusViewModel : ViewModelBase
         IStringLocalizer<Shared> sharedLoc,
         IErrorMessageResolver errorResolver,
         IToastService toastService,
-        IConfirmDialogService confirmDialogService)
+        IConfirmDialogService confirmDialogService,
+        IMenuImportService menuImportService)
     {
         _menuService = menuService;
         _pricingService = pricingService;
@@ -75,6 +98,7 @@ public sealed class AdminMenusViewModel : ViewModelBase
         _errorResolver = errorResolver;
         _toastService = toastService;
         _confirmDialogService = confirmDialogService;
+        _menuImportService = menuImportService;
 
         _notifier.Changed += OnMenuOrPriceChanged;
     }
@@ -82,6 +106,7 @@ public sealed class AdminMenusViewModel : ViewModelBase
     public override void Dispose()
     {
         _notifier.Changed -= OnMenuOrPriceChanged;
+        _importFileContent?.Dispose();
         base.Dispose();
     }
 
@@ -128,6 +153,50 @@ public sealed class AdminMenusViewModel : ViewModelBase
         get => _pricesByDate;
         private set => SetProperty(ref _pricesByDate, value);
     }
+
+    /// <summary>Whether the "Import menus" modal is currently shown.</summary>
+    public bool IsImportDialogOpen
+    {
+        get => _isImportDialogOpen;
+        private set => SetProperty(ref _isImportDialogOpen, value);
+    }
+
+    /// <summary>The year the admin has selected the uploaded document to refer to.</summary>
+    public int ImportYear
+    {
+        get => _importYear;
+        private set => SetProperty(ref _importYear, value);
+    }
+
+    /// <summary>Display name of the currently selected import file, or null if none is selected.</summary>
+    public string? ImportFileName
+    {
+        get => _importFileName;
+        private set => SetProperty(ref _importFileName, value);
+    }
+
+    /// <summary>
+    /// Localized failure text kept on screen inside the dialog (a toast alone is too transient for a
+    /// message that lists conflicting dates).
+    /// </summary>
+    public string? ImportErrorMessage
+    {
+        get => _importErrorMessage;
+        private set => SetProperty(ref _importErrorMessage, value);
+    }
+
+    /// <summary>Selectable years in the import dialog: current year minus 1 through plus 2, computed on demand.</summary>
+    public IReadOnlyList<int> ImportYearChoices
+    {
+        get
+        {
+            var currentYear = _clock.Today.Year;
+            return new[] { currentYear - 1, currentYear, currentYear + 1, currentYear + 2 };
+        }
+    }
+
+    /// <summary>Whether a file is buffered and no guarded action is currently in flight.</summary>
+    public bool CanRunImport => _importFileContent is not null && !IsBusy;
 
     public IReadOnlyList<MenuDto> GetMenusFor(DateOnly date) =>
         MenusByDate.TryGetValue(date, out var list) ? list : Array.Empty<MenuDto>();
@@ -208,11 +277,7 @@ public sealed class AdminMenusViewModel : ViewModelBase
     /// <see cref="SelectedWeek"/> to <see cref="CurrentWeek"/> when the resolved week is earlier —
     /// admins are allowed to navigate into the past here.
     /// </summary>
-    public Task GoToWeekAsync(DateOnly anyDateInWeek) => RunGuardedAsync(async () =>
-    {
-        SelectedWeek = await _weekService.GetWeekIdentifierAsync(anyDateInWeek);
-        await ReloadWeekDataAsync();
-    });
+    public Task GoToWeekAsync(DateOnly anyDateInWeek) => RunGuardedAsync(() => GoToWeekCoreAsync(anyDateInWeek));
 
     public Task AddMenuAsync(DateOnly date) => RunGuardedAsync(async () =>
     {
@@ -352,7 +417,171 @@ public sealed class AdminMenusViewModel : ViewModelBase
 
     public int GetMaxMenusPerDay() => _appOptions.CurrentValue.MaxMenusPerDay;
 
+    // ---- Menu import ----
+
+    /// <summary>Opens the import dialog with fresh state (any previous file selection/error is discarded).</summary>
+    public void OpenImportDialog()
+    {
+        ImportFileName = null;
+        ImportErrorMessage = null;
+        _importFileContent?.Dispose();
+        _importFileContent = null;
+        ImportYear = _clock.Today.Year;
+        IsImportDialogOpen = true;
+    }
+
+    /// <summary>Closes the import dialog and clears its state. Safe to call more than once.</summary>
+    public void CloseImportDialog()
+    {
+        ImportFileName = null;
+        ImportErrorMessage = null;
+        _importFileContent?.Dispose();
+        _importFileContent = null;
+        IsImportDialogOpen = false;
+    }
+
+    public void SetImportYear(int year) => ImportYear = year;
+
+    /// <summary>
+    /// Buffers the selected .docx into a seekable <see cref="MemoryStream"/>. Deliberately NOT
+    /// wrapped in <see cref="RunGuardedAsync"/>: file selection must stay responsive even while a
+    /// previous guarded action (e.g. a week reload) is still finishing, so this method guards itself
+    /// with its own try/catch instead of sharing the ViewModel-wide semaphore.
+    /// </summary>
+    public async Task OnImportFileSelectedAsync(IBrowserFile? file)
+    {
+        try
+        {
+            if (file is null)
+            {
+                _importFileContent?.Dispose();
+                _importFileContent = null;
+                ImportFileName = null;
+                ImportErrorMessage = null;
+                return;
+            }
+
+            if (!string.Equals(Path.GetExtension(file.Name), ".docx", StringComparison.OrdinalIgnoreCase))
+            {
+                _importFileContent?.Dispose();
+                _importFileContent = null;
+                ImportErrorMessage = _loc["MenusImportInvalidExtension"];
+                return;
+            }
+
+            // Cheap client-side rejection before reading anything; the service re-checks the same
+            // limit once the stream is actually parsed.
+            if (file.Size > BusinessRules.MaxMenuImportBytes)
+            {
+                ImportErrorMessage = _errorResolver.Resolve(ErrorCodes.MenuImportFileTooLarge, [BusinessRules.MaxMenuImportMegabytes]);
+                return;
+            }
+
+            _importFileContent?.Dispose();
+
+            // IBrowserFile's stream is forward-only and single-use, but the import needs a seekable
+            // stream and reads it twice (preview, then commit) — buffering into a MemoryStream means
+            // the browser still uploads the file only once.
+            await using var source = file.OpenReadStream(BusinessRules.MaxMenuImportBytes);
+            var buffer = new MemoryStream();
+            await source.CopyToAsync(buffer);
+            buffer.Position = 0;
+            _importFileContent = buffer;
+
+            ImportFileName = file.Name;
+            ImportErrorMessage = null;
+        }
+        catch (IOException)
+        {
+            // OpenReadStream/CopyToAsync throws IOException when the actual stream turns out to
+            // exceed maxAllowedSize — surfaces the same too-large message as the upfront check.
+            ImportErrorMessage = _errorResolver.Resolve(ErrorCodes.MenuImportFileTooLarge, [BusinessRules.MaxMenuImportMegabytes]);
+        }
+        catch (Exception)
+        {
+            ImportErrorMessage = _errorResolver.Resolve(ErrorCodes.MenuImportFailed, null);
+        }
+    }
+
+    public Task RunImportAsync() => RunGuardedAsync(async () =>
+    {
+        if (_importFileContent is null)
+        {
+            return;
+        }
+
+        ImportErrorMessage = null;
+
+        _importFileContent.Position = 0;
+        var preview = await _menuImportService.PreviewAsync(_importFileContent, ImportYear);
+
+        if (!preview.IsSuccess)
+        {
+            var message = _errorResolver.Resolve(preview.ErrorCode, preview.MessageArgs);
+            ImportErrorMessage = message;
+            _toastService.ShowError(message);
+            return;
+        }
+
+        if (preview.Value!.WeekdayMismatchExamples.Count > 0)
+        {
+            // Wrong-year guard from plan §2.6: this is deliberately a confirmation rather than a hard
+            // error, because a document's weekday labels may legitimately have been typed for a
+            // different year than the one selected.
+            var confirmed = await _confirmDialogService.ConfirmAsync(
+                _loc["MenusImportWeekdayMismatchConfirm", ImportYear, string.Join("; ", preview.Value.WeekdayMismatchExamples)],
+                confirmLabel: _sharedLoc["ButtonConfirm"]);
+
+            if (!confirmed)
+            {
+                return;
+            }
+        }
+
+        _importFileContent.Position = 0;
+        var result = await _menuImportService.ImportAsync(_importFileContent, ImportYear);
+
+        if (!result.IsSuccess)
+        {
+            var message = _errorResolver.Resolve(result.ErrorCode, result.MessageArgs);
+            ImportErrorMessage = message;
+            _toastService.ShowError(message);
+            return;
+        }
+
+        var r = result.Value!;
+        var successText = (string)_loc["MenusImportSuccessTemplate", r.MenusImported, r.DaysImported,
+            r.FirstDate.ToString("dd.MM.yyyy", CultureInfo.CurrentCulture),
+            r.LastDate.ToString("dd.MM.yyyy", CultureInfo.CurrentCulture)];
+
+        if (r.SkippedNonWorkingDayCount > 0)
+        {
+            successText += " " + (string)_loc["MenusImportSkippedDaysNote", r.SkippedNonWorkingDayCount];
+        }
+
+        _toastService.ShowSuccess(successText);
+
+        // GoToWeekAsync is itself wrapped in RunGuardedAsync, and RunGuardedAsync's semaphore is not
+        // re-entrant — calling it from here (already inside this method's own RunGuardedAsync) would
+        // be silently dropped. GoToWeekCoreAsync is the extracted body so both paths can call it
+        // directly. Do not re-inline it.
+        await GoToWeekCoreAsync(r.FirstDate);
+
+        CloseImportDialog();
+    });
+
     // ---- Private helpers ----
+
+    /// <summary>
+    /// Extracted from <see cref="GoToWeekAsync"/> so <see cref="RunImportAsync"/> — already running
+    /// inside its own <see cref="ViewModelBase.RunGuardedAsync"/> — can navigate to the imported
+    /// week's data without going through GoToWeekAsync's own (non-reentrant) guard.
+    /// </summary>
+    private async Task GoToWeekCoreAsync(DateOnly anyDateInWeek)
+    {
+        SelectedWeek = await _weekService.GetWeekIdentifierAsync(anyDateInWeek);
+        await ReloadWeekDataAsync();
+    }
 
     private async Task ReloadWeekDataAsync()
     {

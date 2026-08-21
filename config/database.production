@@ -1,0 +1,17 @@
+{
+  "Database": {
+    "Server": "CHSQL1",
+    "Database": "lunchorganizer",
+    "IntegratedSecurity": true,
+    "Username": "chlunchorganizer",
+    "Password": "IP5BPaHxHPMEMbon9h5N",
+    "MaintenanceDatabase": "master",
+    "Encrypt": optional,
+    "TrustServerCertificate": false,
+    "ConnectionString": "",
+    "AutoCreateDatabase": true,
+    "Seed": true,
+    "MaxPoolSize": 50,
+    "CommandTimeoutSeconds": 30
+  }
+}

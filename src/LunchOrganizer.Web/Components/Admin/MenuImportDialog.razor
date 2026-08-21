@@ -1,0 +1,100 @@
+@inherits LunchOrganizer.Web.Components.Shared.ViewModelComponentBase
+@using LunchOrganizer.Web.ViewModels
+@using Microsoft.AspNetCore.Components.Forms
+@inject AdminMenusViewModel Vm
+@inject IStringLocalizer<LunchOrganizer.Web.Resources.Admin> Loc
+@inject IStringLocalizer<LunchOrganizer.Web.Resources.Shared> SharedLoc
+
+@if (Vm.IsImportDialogOpen)
+{
+    <div class="menu-import-backdrop" @onkeydown="HandleKeyDown">
+        <div class="menu-import-card"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="menu-import-dialog-title"
+             aria-describedby="menu-import-dialog-hint">
+            <h2 id="menu-import-dialog-title" class="menu-import-title">@Loc["MenusImportDialogTitle"]</h2>
+            <p id="menu-import-dialog-hint" class="menu-import-hint">@Loc["MenusImportDialogHint"]</p>
+
+            <div class="menu-import-field">
+                <label for="menu-import-year">@Loc["MenusImportYearLabel"]</label>
+                <select id="menu-import-year"
+                        @ref="_yearSelectRef"
+                        class="menu-import-year-select"
+                        @bind:get="Vm.ImportYear"
+                        @bind:set="(int y) => Vm.SetImportYear(y)">
+                    @foreach (var year in Vm.ImportYearChoices)
+                    {
+                        <option value="@year">@year</option>
+                    }
+                </select>
+            </div>
+
+            <div class="menu-import-field">
+                <label for="menu-import-file">@Loc["MenusImportFileLabel"]</label>
+                <InputFile id="menu-import-file" accept=".docx" OnChange="OnFileChanged" />
+                <span class="menu-import-file-name">@(Vm.ImportFileName ?? Loc["MenusImportNoFileChosen"].Value)</span>
+            </div>
+
+            <BusyIndicator IsBusy="Vm.IsBusy" />
+
+            @if (!string.IsNullOrEmpty(Vm.ImportErrorMessage))
+            {
+                <p class="menu-import-error" role="alert">@Vm.ImportErrorMessage</p>
+            }
+
+            <div class="menu-import-actions">
+                <button type="button" class="menu-import-btn" @onclick="Vm.CloseImportDialog">@SharedLoc["ButtonCancel"]</button>
+                <button type="button" class="menu-import-btn menu-import-btn-primary" disabled="@(!Vm.CanRunImport)" @onclick="Vm.RunImportAsync">@Loc["MenusImportConfirmButton"]</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    protected override System.ComponentModel.INotifyPropertyChanged ViewModel => Vm;
+
+    private ElementReference _yearSelectRef;
+    private bool _shouldFocusYearSelect;
+    private bool _wasOpen;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        // Track the dialog's own open transition (distinct from Blazor's firstRender) so the year
+        // select is (re-)focused every time the dialog becomes visible, not just on the component's
+        // first render.
+        if (Vm.IsImportDialogOpen && !_wasOpen)
+        {
+            _shouldFocusYearSelect = true;
+        }
+
+        _wasOpen = Vm.IsImportDialogOpen;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_shouldFocusYearSelect)
+        {
+            _shouldFocusYearSelect = false;
+            try
+            {
+                await _yearSelectRef.FocusAsync();
+            }
+            catch (JSException)
+            {
+                // The dialog may already have been dismissed before this render completed — nothing
+                // left to focus in that case.
+            }
+        }
+    }
+
+    private Task OnFileChanged(InputFileChangeEventArgs e) => Vm.OnImportFileSelectedAsync(e.File);
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            Vm.CloseImportDialog();
+        }
+    }
+}

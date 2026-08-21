@@ -223,4 +223,37 @@
   <data name="MenusDeleteBlockedPast" xml:space="preserve">
     <value>This menu is for a past day and can no longer be removed.</value>
   </data>
+  <data name="MenusImportButton" xml:space="preserve">
+    <value>Import menu</value>
+  </data>
+  <data name="MenusImportDialogTitle" xml:space="preserve">
+    <value>Import menus from a Word file</value>
+  </data>
+  <data name="MenusImportDialogHint" xml:space="preserve">
+    <value>Choose the year the document refers to, then select the Word (.docx) file. The whole file is imported at once, or not at all.</value>
+  </data>
+  <data name="MenusImportYearLabel" xml:space="preserve">
+    <value>Year</value>
+  </data>
+  <data name="MenusImportFileLabel" xml:space="preserve">
+    <value>Word file (.docx)</value>
+  </data>
+  <data name="MenusImportNoFileChosen" xml:space="preserve">
+    <value>No file selected</value>
+  </data>
+  <data name="MenusImportConfirmButton" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="MenusImportSuccessTemplate" xml:space="preserve">
+    <value>Import successful: {0} menus over {1} day(s), from {2} to {3}.</value>
+  </data>
+  <data name="MenusImportSkippedDaysNote" xml:space="preserve">
+    <value>{0} weekend day(s) in the file were skipped.</value>
+  </data>
+  <data name="MenusImportWeekdayMismatchConfirm" xml:space="preserve">
+    <value>The weekday names in this document do not match the year {0} you selected (for example: {1}). Check the year before continuing. Import anyway?</value>
+  </data>
+  <data name="MenusImportInvalidExtension" xml:space="preserve">
+    <value>Only Word .docx files can be imported.</value>
+  </data>
 </root>

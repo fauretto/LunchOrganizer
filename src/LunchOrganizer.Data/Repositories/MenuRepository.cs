@@ -81,6 +81,64 @@ public sealed class MenuRepository(IDbContextFactory<LunchOrganizerDbContext> fa
         throw lastException!;
     }
 
+    public async Task ImportAsync(IReadOnlyList<Menu> menus, CancellationToken ct = default)
+    {
+        if (menus.Count == 0)
+        {
+            return;
+        }
+
+        await using var db = await factory.CreateDbContextAsync(ct);
+
+        // The explicit transaction exists to make the duplicate READ and the INSERT one unit. A bare
+        // SaveChanges is already atomic on its own, so this transaction is about the check, not the write.
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+
+        var min = menus.Min(m => m.MenuDate);
+        var max = menus.Max(m => m.MenuDate);
+        var importDates = menus.Select(m => m.MenuDate).ToHashSet();
+
+        // A single indexed range scan on ix_menus_menu_date, then an in-memory filter against the
+        // (small) set of imported dates — deliberately avoiding a large IN (...) list of dates.
+        var existingDates = await db.Menus.AsNoTracking()
+            .Where(m => m.MenuDate >= min && m.MenuDate <= max)
+            .Select(m => m.MenuDate)
+            .Distinct()
+            .ToListAsync(ct);
+
+        var conflicts = existingDates.Where(importDates.Contains).OrderBy(d => d).ToList();
+
+        if (conflicts.Count > 0)
+        {
+            // Conflict rule (plan decision D3): ANY existing menu on a date being imported is a conflict,
+            // not merely a matching (menu_date, menu_number) pair. Key-level matching would let a
+            // partially-populated day silently gain the missing menu numbers, producing exactly the mixed
+            // state this feature must prevent.
+            await tx.RollbackAsync(ct);
+            throw new MenuImportConflictException(conflicts);
+        }
+
+        try
+        {
+            // Leave CreatedAtUtc/UpdatedAtUtc to the column defaults and Version to
+            // LunchOrganizerDbContext.ApplyVersionMaintenance (which sets 1 on insert) — exactly as
+            // AddAsync does today.
+            db.Menus.AddRange(menus);
+            await db.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+        }
+        catch (DbUpdateException ex) when (SqlServerErrors.IsUniqueViolation(ex))
+        {
+            // A concurrent importer won the race between the read above and this insert. The losing side
+            // cannot cheaply know which specific dates collided, so it reports the whole batch's distinct
+            // dates as the conflict set.
+            await tx.RollbackAsync(ct);
+            throw new MenuImportConflictException(menus.Select(m => m.MenuDate).Distinct().OrderBy(d => d).ToList());
+        }
+        // Any other exception propagates as-is: `await using` on the transaction rolls it back on
+        // dispose. Do not add a redundant catch/rollback/rethrow here for the general case.
+    }
+
     public async Task UpdateAsync(Menu menu, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);

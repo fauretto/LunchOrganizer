@@ -223,4 +223,37 @@
   <data name="MenusDeleteBlockedPast" xml:space="preserve">
     <value>Ce menu concerne un jour passé et ne peut plus être supprimé.</value>
   </data>
+  <data name="MenusImportButton" xml:space="preserve">
+    <value>Importer un menu</value>
+  </data>
+  <data name="MenusImportDialogTitle" xml:space="preserve">
+    <value>Importer des menus depuis un fichier Word</value>
+  </data>
+  <data name="MenusImportDialogHint" xml:space="preserve">
+    <value>Choisissez l’année à laquelle le document se réfère, puis sélectionnez le fichier Word (.docx). Le fichier est importé en une seule fois, entièrement ou pas du tout.</value>
+  </data>
+  <data name="MenusImportYearLabel" xml:space="preserve">
+    <value>Année</value>
+  </data>
+  <data name="MenusImportFileLabel" xml:space="preserve">
+    <value>Fichier Word (.docx)</value>
+  </data>
+  <data name="MenusImportNoFileChosen" xml:space="preserve">
+    <value>Aucun fichier sélectionné</value>
+  </data>
+  <data name="MenusImportConfirmButton" xml:space="preserve">
+    <value>Importer</value>
+  </data>
+  <data name="MenusImportSuccessTemplate" xml:space="preserve">
+    <value>Importation réussie : {0} menus sur {1} jour(s), du {2} au {3}.</value>
+  </data>
+  <data name="MenusImportSkippedDaysNote" xml:space="preserve">
+    <value>{0} jour(s) de week-end du fichier ont été ignorés.</value>
+  </data>
+  <data name="MenusImportWeekdayMismatchConfirm" xml:space="preserve">
+    <value>Les noms des jours de la semaine dans ce document ne correspondent pas à l’année {0} sélectionnée (par exemple : {1}). Vérifiez l’année avant de continuer. Importer malgré tout ?</value>
+  </data>
+  <data name="MenusImportInvalidExtension" xml:space="preserve">
+    <value>Seuls les fichiers Word .docx peuvent être importés.</value>
+  </data>
 </root>

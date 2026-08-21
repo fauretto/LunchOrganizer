@@ -97,6 +97,33 @@
   <data name="MaxMenusPerDayReached" xml:space="preserve">
     <value>This day already has the maximum of {0} menus. Remove one before adding another.</value>
   </data>
+  <data name="MenuImportInvalidDocument" xml:space="preserve">
+    <value>The file is not a valid Word (.docx) document, or it is damaged. Nothing was imported.</value>
+  </data>
+  <data name="MenuImportFileTooLarge" xml:space="preserve">
+    <value>The file is too large (maximum {0} MB). Nothing was imported.</value>
+  </data>
+  <data name="MenuImportNoDataFound" xml:space="preserve">
+    <value>No menu was found in this document. Check that it uses the expected weekly-table layout, with one row per day and one column per menu. Nothing was imported.</value>
+  </data>
+  <data name="MenuImportInvalidDate" xml:space="preserve">
+    <value>The document contains an invalid date: “{0}”. Check the day and month, and the year you selected. Nothing was imported.</value>
+  </data>
+  <data name="MenuImportDatesNotChronological" xml:space="preserve">
+    <value>The days in this document are not in chronological order: “{1}” comes after {0}. Nothing was imported.</value>
+  </data>
+  <data name="MenuImportWeekdayMismatch" xml:space="preserve">
+    <value>The day names in this document do not match the year you selected: “{0}” falls on a weekend ({1}). Select the correct year and try again. Nothing was imported.</value>
+  </data>
+  <data name="MenuImportDuplicateInDocument" xml:space="preserve">
+    <value>The document lists {0} more than once. Remove the duplicated week and try again. Nothing was imported.</value>
+  </data>
+  <data name="MenuImportDuplicateMenusExist" xml:space="preserve">
+    <value>Import cancelled: the database already contains menus for {0} of the dates in this file ({1}). Delete those menus first, or import a different file. Nothing was imported.</value>
+  </data>
+  <data name="MenuImportFailed" xml:space="preserve">
+    <value>The import failed and nothing was saved. Please try again; if the problem persists, check the application log.</value>
+  </data>
   <data name="PriceInvalid" xml:space="preserve">
     <value>Enter a price like 12.50 or 12,50.</value>
   </data>
