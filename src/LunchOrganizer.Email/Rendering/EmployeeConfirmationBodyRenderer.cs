@@ -48,6 +48,14 @@ public sealed class EmployeeConfirmationBodyRenderer(IOptionsMonitor<AppOptions>
         sb.Append(EmailBodyText.ConfirmationMenuLabel(language, booking.MenuNumber)).AppendLine();
         sb.Append(description).AppendLine();
         sb.Append(EmailBodyText.ConfirmationPriceLabel(language, booking.PriceSnapshot, currency)).AppendLine();
+
+        var bookedBy = EmailBodyText.ConfirmationBookedBy(language, booking.BookedByUserName, booking.BookedByUserFullName, booking.BookedByUserEmail);
+        if (bookedBy is not null)
+        {
+            sb.AppendLine();
+            sb.Append(bookedBy).AppendLine();
+        }
+
         sb.AppendLine();
         sb.Append(EmailBodyText.ConfirmationClosing(language)).AppendLine();
         sb.AppendLine();
@@ -105,6 +113,15 @@ public sealed class EmployeeConfirmationBodyRenderer(IOptionsMonitor<AppOptions>
         sb.Append("<tr><td style=\"padding:0 16px 12px 16px; font-size:14px; color:#000000;\">")
           .Append(WebUtility.HtmlEncode(EmailBodyText.ConfirmationPriceLabel(language, booking.PriceSnapshot, currency)))
           .Append("</td></tr>");
+
+        // Booked-by row (only when there is something to say).
+        var bookedBy = EmailBodyText.ConfirmationBookedBy(language, booking.BookedByUserName, booking.BookedByUserFullName, booking.BookedByUserEmail);
+        if (bookedBy is not null)
+        {
+            sb.Append("<tr><td style=\"padding:0 16px 12px 16px; font-size:14px; color:#000000;\">")
+              .Append(WebUtility.HtmlEncode(bookedBy))
+              .Append("</td></tr>");
+        }
 
         // Closing row.
         sb.Append("<tr><td style=\"padding:0 16px 16px 16px; font-size:14px; color:#000000;\">")

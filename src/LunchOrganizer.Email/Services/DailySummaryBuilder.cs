@@ -60,7 +60,10 @@ public sealed class DailySummaryBuilder(
                 b.Employee!.Email,
                 b.Menu!.MenuNumber,
                 b.Menu!.Description,
-                b.PriceSnapshot))
+                b.PriceSnapshot,
+                b.UserName,
+                b.UserFullName,
+                b.UserEmail))
             .ToList();
 
         var summary = new DailySummaryDto(date, bookings.Count, groups, clock.UtcNow, employeeBookings);

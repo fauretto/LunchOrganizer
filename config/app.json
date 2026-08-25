@@ -8,5 +8,13 @@
     "AutocompleteMinChars": 2,
     "AutocompleteMaxResults": 10,
     "MaxMenusPerDay": 10
+  },
+  "PcUser": {
+    "Enabled": true,
+    "ResolveDirectoryDetails": true,
+    "DirectoryTimeoutSeconds": 3,
+    "CacheMinutes": 60,
+    "AllowServerUserFallbackInDevelopment": false,
+    "Diagnostics": true
   }
 }

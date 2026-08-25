@@ -2,6 +2,7 @@ using System.Globalization;
 using LunchOrganizer.Domain.Common;
 using LunchOrganizer.Domain.Configuration;
 using LunchOrganizer.Domain.Enums;
+using LunchOrganizer.Domain.Identity;
 using LunchOrganizer.Domain.Time;
 using LunchOrganizer.Email.Validation;
 using LunchOrganizer.Services.Abstractions;
@@ -30,6 +31,7 @@ public sealed class BookingViewModel : ViewModelBase
     private readonly IStringLocalizer<Booking> _loc;
     private readonly IErrorMessageResolver _errorResolver;
     private readonly IToastService _toastService;
+    private readonly IPcUserContext? _pcUserContext;
 
     private bool _initialized;
 
@@ -66,7 +68,8 @@ public sealed class BookingViewModel : ViewModelBase
         IOptionsMonitor<AppOptions> appOptions,
         IStringLocalizer<Booking> loc,
         IErrorMessageResolver errorResolver,
-        IToastService toastService)
+        IToastService toastService,
+        IPcUserContext? pcUserContext = null)
     {
         _bookingService = bookingService;
         _employeeService = employeeService;
@@ -77,6 +80,7 @@ public sealed class BookingViewModel : ViewModelBase
         _loc = loc;
         _errorResolver = errorResolver;
         _toastService = toastService;
+        _pcUserContext = pcUserContext;
 
         _notifier.Changed += OnBookingChanged;
     }
@@ -464,6 +468,10 @@ public sealed class BookingViewModel : ViewModelBase
         var anyFailed = false;
         int? lastChangedMenuNumber = null;
 
+        // Resolved once for the whole save, not once per day — it is the same PC user for every
+        // day being saved here. A null/empty result is normal and must not affect the booking.
+        var bookedBy = _pcUserContext is null ? PcUserInfo.Empty : await _pcUserContext.GetCurrentAsync();
+
         // Sequential, ascending-date order — never Task.WhenAll — mirrors the whole-week booking's
         // ordering discipline, applied here for consistency even though these calls are independent.
         foreach (var day in view.Days)
@@ -483,7 +491,7 @@ public sealed class BookingViewModel : ViewModelBase
 
             if (pending is not null)
             {
-                var bookResult = await _bookingService.BookDayAsync(new BookingRequest(employee.Id, day.Date, pending.Value));
+                var bookResult = await _bookingService.BookDayAsync(new BookingRequest(employee.Id, day.Date, pending.Value, bookedBy));
                 if (bookResult.IsSuccess)
                 {
                     changedDates.Add(day.Date);
@@ -559,7 +567,10 @@ public sealed class BookingViewModel : ViewModelBase
         var week = SelectedWeek;
         var menuNumber = WholeWeekMenuNumber.Value;
 
-        var result = await _bookingService.BookWeekAsync(new WeekBookingRequest(employee.Id, week.Monday, menuNumber));
+        // A null/empty PC user is normal and must not affect the booking.
+        var bookedBy = _pcUserContext is null ? PcUserInfo.Empty : await _pcUserContext.GetCurrentAsync();
+
+        var result = await _bookingService.BookWeekAsync(new WeekBookingRequest(employee.Id, week.Monday, menuNumber, bookedBy));
 
         await ReloadSelectedWeekViewAsync();
         if (SelectedWeekView is not null && SelectedWeekView.Days.Any(d => d.Date == _clock.Today))

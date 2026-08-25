@@ -84,7 +84,10 @@ public sealed class BookingService(
                 EmployeeId = request.EmployeeId,
                 BookingDate = request.BookingDate,
                 MenuId = request.MenuId,
-                PriceSnapshot = price
+                PriceSnapshot = price,
+                UserName = request.BookedBy?.UserName,
+                UserFullName = request.BookedBy?.UserFullName,
+                UserEmail = request.BookedBy?.UserEmail
             },
             ct);
 
@@ -166,7 +169,16 @@ public sealed class BookingService(
         if (toApply.Count > 0)
         {
             var bookings = toApply
-                .Select(t => new Booking { EmployeeId = request.EmployeeId, BookingDate = t.Date, MenuId = t.MenuId, PriceSnapshot = t.Price })
+                .Select(t => new Booking
+                {
+                    EmployeeId = request.EmployeeId,
+                    BookingDate = t.Date,
+                    MenuId = t.MenuId,
+                    PriceSnapshot = t.Price,
+                    UserName = request.BookedBy?.UserName,
+                    UserFullName = request.BookedBy?.UserFullName,
+                    UserEmail = request.BookedBy?.UserEmail
+                })
                 .ToList();
 
             await bookingRepo.UpsertManyAsync(bookings, ct);

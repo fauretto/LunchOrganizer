@@ -46,7 +46,10 @@ internal sealed class FakeDailySummaryBuilder(FakeDataStore store, IClock clock)
                 t.Employee!.Email,
                 t.Menu!.MenuNumber,
                 t.Menu!.Description,
-                t.Booking.PriceSnapshot))
+                t.Booking.PriceSnapshot,
+                t.Booking.UserName,
+                t.Booking.UserFullName,
+                t.Booking.UserEmail))
             .ToList();
 
         var summary = new DailySummaryDto(date, bookingsForDate.Count, groups, clock.UtcNow, employeeBookings);

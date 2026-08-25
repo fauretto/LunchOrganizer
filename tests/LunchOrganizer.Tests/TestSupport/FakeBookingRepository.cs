@@ -50,6 +50,9 @@ public sealed class FakeBookingRepository : IBookingRepository
         {
             existing.MenuId = booking.MenuId;
             existing.PriceSnapshot = booking.PriceSnapshot;
+            existing.UserName = booking.UserName;
+            existing.UserFullName = booking.UserFullName;
+            existing.UserEmail = booking.UserEmail;
             return Task.FromResult(existing);
         }
 

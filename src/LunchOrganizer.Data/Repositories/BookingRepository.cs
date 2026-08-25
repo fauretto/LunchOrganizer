@@ -70,20 +70,27 @@ public sealed class BookingRepository(IDbContextFactory<LunchOrganizerDbContext>
         // equivalent to PostgreSQL's upsert (INSERT ... DO UPDATE) guarantee.
         var rows = await db.Bookings.FromSqlInterpolated($"""
             MERGE bookings WITH (HOLDLOCK) AS t
-            USING (VALUES ({booking.EmployeeId}, {booking.BookingDate}, {booking.MenuId}, {booking.PriceSnapshot}))
-                  AS s (employee_id, booking_date, menu_id, price_snapshot)
+            USING (VALUES ({booking.EmployeeId}, {booking.BookingDate}, {booking.MenuId}, {booking.PriceSnapshot},
+                           CAST({booking.UserName} AS nvarchar(256)),
+                           CAST({booking.UserFullName} AS nvarchar(256)),
+                           CAST({booking.UserEmail} AS nvarchar(320))))
+                  AS s (employee_id, booking_date, menu_id, price_snapshot, user_name, user_fullname, user_email)
                 ON t.employee_id = s.employee_id AND t.booking_date = s.booking_date
             WHEN MATCHED THEN
                 UPDATE SET menu_id        = s.menu_id,
                            price_snapshot = s.price_snapshot,
+                           user_name      = s.user_name,
+                           user_fullname  = s.user_fullname,
+                           user_email     = s.user_email,
                            updated_at_utc = CAST(SYSUTCDATETIME() AS datetimeoffset),
                            version        = t.version + 1
             WHEN NOT MATCHED THEN
-                INSERT (employee_id, booking_date, menu_id, price_snapshot, created_at_utc, updated_at_utc, version)
-                VALUES (s.employee_id, s.booking_date, s.menu_id, s.price_snapshot,
+                INSERT (employee_id, booking_date, menu_id, price_snapshot, user_name, user_fullname, user_email, created_at_utc, updated_at_utc, version)
+                VALUES (s.employee_id, s.booking_date, s.menu_id, s.price_snapshot, s.user_name, s.user_fullname, s.user_email,
                         CAST(SYSUTCDATETIME() AS datetimeoffset), CAST(SYSUTCDATETIME() AS datetimeoffset), 1)
             OUTPUT inserted.id, inserted.employee_id, inserted.booking_date, inserted.menu_id,
-                   inserted.price_snapshot, inserted.created_at_utc, inserted.updated_at_utc, inserted.version;
+                   inserted.price_snapshot, inserted.created_at_utc, inserted.updated_at_utc, inserted.version,
+                   inserted.user_name, inserted.user_fullname, inserted.user_email;
             """).AsNoTracking().ToListAsync(ct);
         return rows[0];
     }
@@ -102,20 +109,27 @@ public sealed class BookingRepository(IDbContextFactory<LunchOrganizerDbContext>
             // genuinely equivalent to PostgreSQL's upsert (INSERT ... DO UPDATE) guarantee.
             var rows = await db.Bookings.FromSqlInterpolated($"""
                 MERGE bookings WITH (HOLDLOCK) AS t
-                USING (VALUES ({booking.EmployeeId}, {booking.BookingDate}, {booking.MenuId}, {booking.PriceSnapshot}))
-                      AS s (employee_id, booking_date, menu_id, price_snapshot)
+                USING (VALUES ({booking.EmployeeId}, {booking.BookingDate}, {booking.MenuId}, {booking.PriceSnapshot},
+                               CAST({booking.UserName} AS nvarchar(256)),
+                               CAST({booking.UserFullName} AS nvarchar(256)),
+                               CAST({booking.UserEmail} AS nvarchar(320))))
+                      AS s (employee_id, booking_date, menu_id, price_snapshot, user_name, user_fullname, user_email)
                     ON t.employee_id = s.employee_id AND t.booking_date = s.booking_date
                 WHEN MATCHED THEN
                     UPDATE SET menu_id        = s.menu_id,
                                price_snapshot = s.price_snapshot,
+                               user_name      = s.user_name,
+                               user_fullname  = s.user_fullname,
+                               user_email     = s.user_email,
                                updated_at_utc = CAST(SYSUTCDATETIME() AS datetimeoffset),
                                version        = t.version + 1
                 WHEN NOT MATCHED THEN
-                    INSERT (employee_id, booking_date, menu_id, price_snapshot, created_at_utc, updated_at_utc, version)
-                    VALUES (s.employee_id, s.booking_date, s.menu_id, s.price_snapshot,
+                    INSERT (employee_id, booking_date, menu_id, price_snapshot, user_name, user_fullname, user_email, created_at_utc, updated_at_utc, version)
+                    VALUES (s.employee_id, s.booking_date, s.menu_id, s.price_snapshot, s.user_name, s.user_fullname, s.user_email,
                             CAST(SYSUTCDATETIME() AS datetimeoffset), CAST(SYSUTCDATETIME() AS datetimeoffset), 1)
                 OUTPUT inserted.id, inserted.employee_id, inserted.booking_date, inserted.menu_id,
-                       inserted.price_snapshot, inserted.created_at_utc, inserted.updated_at_utc, inserted.version;
+                       inserted.price_snapshot, inserted.created_at_utc, inserted.updated_at_utc, inserted.version,
+                       inserted.user_name, inserted.user_fullname, inserted.user_email;
                 """).AsNoTracking().ToListAsync(ct);
             results.Add(rows[0]);
         }

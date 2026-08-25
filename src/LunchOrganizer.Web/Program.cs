@@ -6,6 +6,7 @@ using LunchOrganizer.Web.Components.Shared.Toasts;
 using LunchOrganizer.Web.Endpoints;
 using LunchOrganizer.Data;
 using LunchOrganizer.Domain.Configuration;
+using LunchOrganizer.Domain.Identity;
 using LunchOrganizer.Email;
 using LunchOrganizer.Email.Abstractions;
 using LunchOrganizer.Email.Rendering;
@@ -16,6 +17,7 @@ using LunchOrganizer.Fakes;
 using LunchOrganizer.Services;
 using LunchOrganizer.Services.Abstractions;
 using LunchOrganizer.Services.Notifications;
+using LunchOrganizer.Web.Identity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Localization;
@@ -52,6 +54,7 @@ builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(Dat
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.SectionName));
 // admin-users.json has no wrapping section — the whole file IS the AdminUsersOptions object.
 builder.Services.Configure<AdminUsersOptions>(builder.Configuration);
+builder.Services.Configure<PcUserOptions>(builder.Configuration.GetSection(PcUserOptions.SectionName));
 
 // ---- Database: ALWAYS AddDbContextFactory, NEVER AddDbContext (Blazor Server DbContext lifetime rule) ----
 builder.Services.AddDbContextFactory<LunchOrganizerDbContext>((sp, options) =>
@@ -75,6 +78,13 @@ builder.Services.AddScoped<LunchOrganizer.Web.ViewModels.BookingViewModel>();
 builder.Services.AddScoped<LunchOrganizer.Web.ViewModels.ReportViewModel>();
 builder.Services.AddScoped<LunchOrganizer.Web.ViewModels.AdminEmployeesViewModel>();
 builder.Services.AddScoped<LunchOrganizer.Web.ViewModels.AdminMenusViewModel>();
+
+// PC-user capture: the resolver is a singleton on purpose (it is stateless apart from its
+// IMemoryCache), while the context is scoped because it represents "the PC user for this request
+// or circuit" — one resolution per HTTP request, one per Blazor circuit.
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<IPcUserResolver, ActiveDirectoryPcUserResolver>();
+builder.Services.AddScoped<IPcUserContext, PcUserContext>();
 
 // Validate the configured cultures against the host at startup. The DI container isn't built
 // yet, so a minimal standalone logger factory is used just for this block; never throw out of
@@ -247,6 +257,12 @@ app.UseHttpsRedirection();
 
 app.UseRequestLocalization();
 
+// TEMPORARY diagnostic (gated by PcUser:Diagnostics) — must be removed before production.
+app.UseWhoAmIDiagnostics();
+
+// Must precede authentication: the cookie handler replaces HttpContext.User for a logged-in admin
+// and would otherwise hide the Windows identity IIS put there.
+app.UsePcUserCapture();
 app.UseAuthentication();
 app.UseAuthorization();
 

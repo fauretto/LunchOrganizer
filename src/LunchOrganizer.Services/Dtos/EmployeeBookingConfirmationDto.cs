@@ -10,4 +10,7 @@ public sealed record EmployeeBookingConfirmationDto(
     string? Email,
     int MenuNumber,
     string? MenuDescription,
-    decimal PriceSnapshot);
+    decimal PriceSnapshot,
+    string? BookedByUserName = null,
+    string? BookedByUserFullName = null,
+    string? BookedByUserEmail = null);

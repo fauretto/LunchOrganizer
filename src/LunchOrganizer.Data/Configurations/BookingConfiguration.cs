@@ -57,6 +57,18 @@ public class BookingConfiguration : IEntityTypeConfiguration<Booking>
             .IsConcurrencyToken()
             .HasDefaultValueSql("1");
 
+        builder.Property(b => b.UserName)
+            .HasColumnName("user_name")
+            .HasColumnType("nvarchar(256)");
+
+        builder.Property(b => b.UserFullName)
+            .HasColumnName("user_fullname")
+            .HasColumnType("nvarchar(256)");
+
+        builder.Property(b => b.UserEmail)
+            .HasColumnName("user_email")
+            .HasColumnType("nvarchar(320)");
+
         builder.HasIndex(b => new { b.EmployeeId, b.BookingDate })
             .IsUnique()
             .HasDatabaseName("ix_bookings_employee_date");

@@ -1,0 +1,34 @@
+@using LunchOrganizer.Domain.Identity
+@implements IDisposable
+@inject IPcUserContext PcUser
+@inject PersistentComponentState State
+
+@code {
+    private PersistingComponentStateSubscription _subscription;
+
+    protected override void OnInitialized()
+    {
+        _subscription = State.RegisterOnPersisting(PersistPcUserAsync);
+    }
+
+    private async Task PersistPcUserAsync()
+    {
+        try
+        {
+            var info = await PcUser.GetCurrentAsync();
+            if (info.HasAttribution)
+            {
+                State.PersistAsJson("pc-user", new { info.UserName, info.UserFullName, info.UserEmail });
+            }
+        }
+        catch (Exception)
+        {
+            // No user-visible consequence to failing to persist the PC user — swallow and move on.
+        }
+    }
+
+    public void Dispose()
+    {
+        _subscription.Dispose();
+    }
+}

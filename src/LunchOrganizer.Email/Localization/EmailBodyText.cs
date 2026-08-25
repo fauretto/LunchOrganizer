@@ -80,4 +80,31 @@ internal static class EmailBodyText
 
     public static string ConfirmationClosing(string? language) =>
         IsFrench(language) ? "Bon appétit !" : "Enjoy your meal!";
+
+    public static string? ConfirmationBookedBy(string? language, string? userName, string? userFullName, string? userEmail)
+    {
+        string displayName;
+        if (!string.IsNullOrWhiteSpace(userFullName))
+        {
+            displayName = userFullName;
+        }
+        else if (!string.IsNullOrWhiteSpace(userName))
+        {
+            displayName = userName;
+        }
+        else
+        {
+            return null;
+        }
+
+        var parenthetical = !string.IsNullOrWhiteSpace(userName) && !string.IsNullOrWhiteSpace(userFullName)
+            ? $" ({userName})"
+            : string.Empty;
+
+        var emailPart = !string.IsNullOrWhiteSpace(userEmail) ? $" : e-mail : {userEmail}" : string.Empty;
+
+        return IsFrench(language)
+            ? $"Votre repas a été réservé par {displayName}{parenthetical}{emailPart}"
+            : $"Your lunch has been booked by {displayName}{parenthetical}{emailPart}";
+    }
 }
