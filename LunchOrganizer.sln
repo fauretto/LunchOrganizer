@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.9.12112.369 stable
+VisualStudioVersion = 18.9.12112.369
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
@@ -28,6 +28,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Production config", "Produc
 		config\database.production = config\database.production
 		config\email.production = config\email.production
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LunchOrganizer.AdminHash", "src\LunchOrganizer.AdminHash\LunchOrganizer.AdminHash.csproj", "{93815F46-EF80-4115-A075-05DEA324BA14}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -135,6 +137,18 @@ Global
 		{F9FD78E7-59E1-48BF-8A90-78F7FCEB78F3}.Release|x64.Build.0 = Release|Any CPU
 		{F9FD78E7-59E1-48BF-8A90-78F7FCEB78F3}.Release|x86.ActiveCfg = Release|Any CPU
 		{F9FD78E7-59E1-48BF-8A90-78F7FCEB78F3}.Release|x86.Build.0 = Release|Any CPU
+		{93815F46-EF80-4115-A075-05DEA324BA14}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{93815F46-EF80-4115-A075-05DEA324BA14}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{93815F46-EF80-4115-A075-05DEA324BA14}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{93815F46-EF80-4115-A075-05DEA324BA14}.Debug|x64.Build.0 = Debug|Any CPU
+		{93815F46-EF80-4115-A075-05DEA324BA14}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{93815F46-EF80-4115-A075-05DEA324BA14}.Debug|x86.Build.0 = Debug|Any CPU
+		{93815F46-EF80-4115-A075-05DEA324BA14}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{93815F46-EF80-4115-A075-05DEA324BA14}.Release|Any CPU.Build.0 = Release|Any CPU
+		{93815F46-EF80-4115-A075-05DEA324BA14}.Release|x64.ActiveCfg = Release|Any CPU
+		{93815F46-EF80-4115-A075-05DEA324BA14}.Release|x64.Build.0 = Release|Any CPU
+		{93815F46-EF80-4115-A075-05DEA324BA14}.Release|x86.ActiveCfg = Release|Any CPU
+		{93815F46-EF80-4115-A075-05DEA324BA14}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -149,5 +163,6 @@ Global
 		{FD7F625C-DA3E-449E-A608-78A8D166AF31} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{F9FD78E7-59E1-48BF-8A90-78F7FCEB78F3} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{64B9FEA8-4E9C-47D7-A2DF-8177396B92D7} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{93815F46-EF80-4115-A075-05DEA324BA14} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using LunchOrganizer.Domain.Configuration;
+using LunchOrganizer.Domain.Security;
 using LunchOrganizer.Web.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -43,11 +44,29 @@ public static class AdminAuthEndpoints
     {
         var logger = loggerFactory.CreateLogger("LunchOrganizer.Web.AdminAuth");
 
-        var user = adminUsersMonitor.CurrentValue.Users
-            .FirstOrDefault(u => string.Equals(u.Username, username, StringComparison.OrdinalIgnoreCase));
+        var matchingUsers = adminUsersMonitor.CurrentValue.Users
+            .Where(u => string.Equals(u.Username, username, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (matchingUsers.Count > 1)
+        {
+            logger.LogWarning(
+                "admin-users.json contains duplicate entries for admin username '{Username}'. Only the first entry is used.",
+                username);
+        }
+
+        var user = matchingUsers.FirstOrDefault();
 
         // Never log the supplied or stored password — only the attempted username.
-        if (user is null || !AdminPasswordVerifier.Verify(password, user.Password))
+        if (user is not null && !AdminPasswordHasher.IsSupportedFormat(user.Password))
+        {
+            logger.LogWarning(
+                "Stored password for admin username '{Username}' is not in the required 'pbkdf2-sha256:' format. " +
+                "Generate a new hash using the LunchOrganizer.AdminHash tool and update admin-users.json.",
+                username);
+        }
+
+        if (user is null || !AdminPasswordHasher.Verify(password, user.Password))
         {
             logger.LogInformation("Admin login failed for username '{Username}'.", username);
             return Results.Redirect("/admin/login?error=invalid");
@@ -56,6 +75,10 @@ public static class AdminAuthEndpoints
         var identity = new ClaimsIdentity(CookieAuthenticationDefaults.AuthenticationScheme);
         identity.AddClaim(new Claim(ClaimTypes.Name, user.Username));
         identity.AddClaim(new Claim("DisplayName", user.DisplayName));
+        // This is what the admin authorization policy requires: without it, an IIS
+        // Windows-authenticated visitor who never signed in through this endpoint cannot
+        // satisfy the policy, even though their Windows principal is also "authenticated".
+        identity.AddClaim(new Claim(AdminAuthorization.AdminClaimType, AdminAuthorization.AdminClaimValue));
         var principal = new ClaimsPrincipal(identity);
 
         await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);

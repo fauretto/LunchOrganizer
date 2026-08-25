@@ -18,8 +18,10 @@ using LunchOrganizer.Services;
 using LunchOrganizer.Services.Abstractions;
 using LunchOrganizer.Services.Notifications;
 using LunchOrganizer.Web.Identity;
+using LunchOrganizer.Web.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -199,18 +201,43 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
             var stillExists = username is not null &&
                 adminUsersMonitor.CurrentValue.Users.Any(u => string.Equals(u.Username, username, StringComparison.OrdinalIgnoreCase));
 
-            if (!stillExists)
+            // The principal must both still exist in admin-users.json AND carry the admin
+            // marker claim issued by AdminAuthEndpoints.HandleLoginAsync. The claim check
+            // cleanly retires any cookie issued before this marker-claim change existed,
+            // instead of leaving its holder authenticated but never actually authorized.
+            var hasAdminClaim = context.Principal?.HasClaim(AdminAuthorization.AdminClaimType, AdminAuthorization.AdminClaimValue) == true;
+
+            if (!stillExists || !hasAdminClaim)
             {
                 // The account was removed (or renamed) from admin-users.json since this cookie
-                // was issued — invalidate the session immediately rather than waiting for the
-                // cookie to expire on its own.
+                // was issued, or the cookie predates the admin marker claim — invalidate the
+                // session immediately rather than waiting for the cookie to expire on its own.
                 context.RejectPrincipal();
                 await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             }
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    // Scheme-scoped AND claim-scoped on purpose:
+    //  - the scheme list is what the endpoint/middleware authorization path honours
+    //    (AuthorizationMiddleware authenticates each listed scheme explicitly);
+    //  - the claim requirement is what the Blazor component path honours, because a
+    //    component-level [Authorize] evaluates the cascaded ClaimsPrincipal and ignores
+    //    the policy's scheme list.
+    // Both are needed so /admin (component) and /admin/report/export.csv (endpoint) are
+    // equally closed to a bare IIS Windows-authenticated visitor.
+    var adminPolicy = new AuthorizationPolicyBuilder(CookieAuthenticationDefaults.AuthenticationScheme)
+        .RequireAuthenticatedUser()
+        .RequireClaim(AdminAuthorization.AdminClaimType, AdminAuthorization.AdminClaimValue)
+        .Build();
+
+    options.AddPolicy(AdminAuthorization.PolicyName, adminPolicy);
+    // Making this the DEFAULT policy tightens the existing bare [Authorize] on Admin.razor
+    // and the bare .RequireAuthorization() on the CSV export endpoint without touching them.
+    options.DefaultPolicy = adminPolicy;
+});
 builder.Services.AddCascadingAuthenticationState();
 
 // ---- Rate limiting: 5 attempts/minute/IP on the admin login POST endpoint (plan §6.5) ----

@@ -1,5 +1,5 @@
 {
   "Users": [
-    { "Username": "massimo", "DisplayName": "Massimo Fauro", "Password": "changeme" }
+    { "Username": "massimo", "DisplayName": "Massimo Fauro", "Password": "pbkdf2-sha256:210000:2ANEIShOZwYm0snpGdtfpw==:hDKaQFCo7NK59Kih+vRNiMCZl+B1I4DaDUMchwm5Lrc=" }
   ]
 }
