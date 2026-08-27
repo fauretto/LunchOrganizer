@@ -622,6 +622,15 @@ public sealed class BookingViewModel : ViewModelBase
         var view = await _bookingService.GetWeekViewAsync(SelectedEmployee.Id, SelectedWeek);
         SelectedWeekView = view;
         SeedPendingSelectionsFrom(view);
+
+        // Initialise the whole-week selector to the first available menu number so the button
+        // is enabled and labelled correctly on first load (not only after the user changes the
+        // combo selection).
+        var firstMenuNumber = AvailableMenuNumbersForWeek.Count > 0 ? AvailableMenuNumbersForWeek[0] : (int?)null;
+        if (WholeWeekMenuNumber is null || !AvailableMenuNumbersForWeek.Contains(WholeWeekMenuNumber.Value))
+        {
+            WholeWeekMenuNumber = firstMenuNumber;
+        }
     }
 
     private void SeedPendingSelectionsFrom(WeekViewDto view)
