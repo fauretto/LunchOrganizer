@@ -146,20 +146,21 @@
 
         @if (Vm.SelectedWeekView is not null)
         {
-            <div class="whole-week-shortcut no-print">
-                <select class="whole-week-select" @bind="Vm.WholeWeekMenuNumber">
-                    @foreach (var n in Vm.AvailableMenuNumbersForWeek)
-                    {
-                        <option value="@n">@SharedLoc["MenuNumberLabelTemplate", n]</option>
-                    }
-                </select>
+            @* whole-week-shortcut hidden
+                <div class="whole-week-shortcut no-print">
+                    <select class="whole-week-select" @bind="Vm.WholeWeekMenuNumber">
+                        @foreach (var n in Vm.AvailableMenuNumbersForWeek)
+                        {
+                            <option value="@n">@SharedLoc["MenuNumberLabelTemplate", n]</option>
+                        }
+                    </select>
 
-                <button type="button"
-                        class="whole-week-apply-btn"
-                        disabled="@(Vm.IsBusy || Vm.SelectedEmployee is null || Vm.SelectedWeekView is null || Vm.WholeWeekMenuNumber is null)"
-                        @onclick="Vm.ApplyMenuToWeekAsync">
-                    @Loc["ApplyMenuToWeekButtonTemplate", Vm.WholeWeekMenuNumber ?? 0]
-                </button>
+                    <button type="button"
+                            class="whole-week-apply-btn"
+                            disabled="@(Vm.IsBusy || Vm.SelectedEmployee is null || Vm.SelectedWeekView is null || Vm.WholeWeekMenuNumber is null)"
+                            @onclick="Vm.ApplyMenuToWeekAsync">
+                        @Loc["ApplyMenuToWeekButtonTemplate", Vm.WholeWeekMenuNumber ?? 0]
+                    </button>
 
                 @if (Vm.LastWholeWeekResult is not null)
                 {
@@ -185,6 +186,7 @@
                     </div>
                 }
             </div>
+        whole-week-shortcut hidden *@
         }
 
         <div class="submit-row no-print">
