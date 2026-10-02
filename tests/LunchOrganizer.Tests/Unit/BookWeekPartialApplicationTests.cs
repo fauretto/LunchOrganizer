@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using LunchOrganizer.Domain.Common;
 using LunchOrganizer.Domain.Configuration;
 using LunchOrganizer.Domain.Entities;
@@ -54,7 +55,7 @@ public sealed class BookWeekPartialApplicationTests
         await menuRepo.AddAsync(new Menu { MenuDate = Thursday, MenuNumber = TargetMenuNumber, Description = "Thursday Menu 3" });
         await menuRepo.AddAsync(new Menu { MenuDate = Friday, MenuNumber = TargetMenuNumber, Description = "Friday Menu 3" });
 
-        var service = new BookingService(bookingRepo, menuRepo, employeeRepo, pricingService, clock, appOptions, notifier);
+        var service = new BookingService(bookingRepo, menuRepo, employeeRepo, pricingService, clock, appOptions, notifier, NullLogger<BookingService>.Instance);
 
         var result = await service.BookWeekAsync(new WeekBookingRequest(employee.Id, Monday, TargetMenuNumber));
 

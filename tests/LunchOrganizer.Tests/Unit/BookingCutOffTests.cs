@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using LunchOrganizer.Domain.Common;
 using LunchOrganizer.Domain.Configuration;
 using LunchOrganizer.Domain.Entities;
@@ -33,7 +34,7 @@ public sealed class BookingCutOffTests
         var employee = employeeRepo.AddAsync(new Employee { FullName = "Alice Example", IsActive = true }).GetAwaiter().GetResult();
         var menu = menuRepo.AddAsync(new Menu { MenuDate = BookingDate, MenuNumber = 1, Description = "Menu 1" }).GetAwaiter().GetResult();
 
-        var service = new BookingService(bookingRepo, menuRepo, employeeRepo, pricingService, clock, appOptions, notifier);
+        var service = new BookingService(bookingRepo, menuRepo, employeeRepo, pricingService, clock, appOptions, notifier, NullLogger<BookingService>.Instance);
 
         return (service, clock, bookingRepo, employee.Id, menu.Id);
     }

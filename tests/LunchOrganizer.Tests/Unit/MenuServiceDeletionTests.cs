@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using LunchOrganizer.Domain.Common;
 using LunchOrganizer.Domain.Configuration;
 using LunchOrganizer.Domain.Entities;
@@ -20,7 +21,7 @@ public sealed class MenuServiceDeletionTests
         var menuRepo = new FakeMenuRepository();
         var bookingRepo = new FakeBookingRepository();
 
-        var service = new MenuService(menuRepo, bookingRepo, clock, appOptions);
+        var service = new MenuService(menuRepo, bookingRepo, clock, appOptions, NullLogger<MenuService>.Instance);
 
         return (service, menuRepo, bookingRepo);
     }

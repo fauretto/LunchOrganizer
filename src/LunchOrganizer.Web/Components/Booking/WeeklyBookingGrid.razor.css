@@ -92,6 +92,18 @@
     color: var(--color-neutral-700);
 }
 
+/* Special menu price, highlighted (warning tokens) so it stands out from the day price */
+.menu-cell-price {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-warning);
+    background: var(--color-warning-bg);
+    padding: 0 var(--space-1);
+    border-radius: var(--radius-sm);
+    align-self: flex-start;
+    white-space: nowrap;
+}
+
 .grid-cell-selected {
     background: var(--color-primary-100);
     border-color: var(--color-primary-700);

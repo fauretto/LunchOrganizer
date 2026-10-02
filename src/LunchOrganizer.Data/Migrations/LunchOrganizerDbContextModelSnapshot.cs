@@ -244,6 +244,10 @@ namespace LunchOrganizer.Data.Migrations
                         .HasColumnType("int")
                         .HasColumnName("menu_number");
 
+                    b.Property<decimal?>("Price")
+                        .HasColumnType("decimal(10,2)")
+                        .HasColumnName("price");
+
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetimeoffset(7)")
@@ -269,6 +273,8 @@ namespace LunchOrganizer.Data.Migrations
                     b.ToTable("menus", null, t =>
                         {
                             t.HasCheckConstraint("ck_menus_menu_number_positive", "menu_number >= 1");
+
+                            t.HasCheckConstraint("ck_menus_price_non_negative", "price IS NULL OR price >= 0");
                         });
                 });
 

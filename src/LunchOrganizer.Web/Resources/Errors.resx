@@ -115,6 +115,9 @@
   <data name="MenuImportWeekdayMismatch" xml:space="preserve">
     <value>The day names in this document do not match the year you selected: “{0}” falls on a weekend ({1}). Select the correct year and try again. Nothing was imported.</value>
   </data>
+  <data name="MenuImportYearMismatch" xml:space="preserve">
+    <value>The day '{0}' belongs to year {2} according to the document, but the import year selected is {1}. Please select the correct year and try again. Nothing was imported.</value>
+  </data>
   <data name="MenuImportDuplicateInDocument" xml:space="preserve">
     <value>The document lists {0} more than once. Remove the duplicated week and try again. Nothing was imported.</value>
   </data>

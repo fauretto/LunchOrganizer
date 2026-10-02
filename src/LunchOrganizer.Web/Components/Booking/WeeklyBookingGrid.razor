@@ -54,12 +54,17 @@ else
                                     class="grid-cell @(isSelected ? "grid-cell-selected" : string.Empty) @(isDisabled ? "grid-cell-disabled" : string.Empty)"
                                     disabled="@isDisabled"
                                     aria-pressed="@(isSelected ? "true" : "false")"
-                                    aria-label="@Loc["GridCellSelectAriaLabelTemplate", dayLabel, menu.MenuNumber, priceLabel]"
+                                    aria-label="@CellAriaLabel(day, menu, dayLabel, priceLabel)"
                                     @onclick="() => HandleCellClick(day.Date, menuId)">
                                 <span class="grid-cell-number">@SharedLoc["MenuNumberLabelTemplate", menu.MenuNumber]</span>
                                 @if (!string.IsNullOrWhiteSpace(menu.Description))
                                 {
                                     <span class="grid-cell-description">@menu.Description</span>
+                                }
+                                @* Special menu price, shown in brackets and highlighted so it stands out from the day price in the column header *@
+                                @if (menu.Price is { } menuPrice && menuPrice != day.Price)
+                                {
+                                    <span class="menu-cell-price" title="@Loc["GridCellMenuPriceTooltip"]">(@PriceFormatter.Format(menuPrice, Currency, CultureInfo.CurrentCulture))</span>
                                 }
                                 @if (isSelected)
                                 {
@@ -98,6 +103,18 @@ else
     private static string DayLabel(DayViewDto day) => day.Date.ToString("dddd d MMMM", CultureInfo.CurrentCulture);
 
     private string PriceLabel(DayViewDto day) => PriceFormatter.Format(day.Price, Currency, CultureInfo.CurrentCulture);
+
+    private string CellAriaLabel(DayViewDto day, MenuDto menu, string dayLabel, string priceLabel)
+    {
+        var label = (string)Loc["GridCellSelectAriaLabelTemplate", dayLabel, menu.MenuNumber, priceLabel];
+
+        if (menu.Price is { } menuPrice && menuPrice != day.Price)
+        {
+            label += Loc["GridCellMenuPriceAriaLabelSuffixTemplate", PriceFormatter.Format(menuPrice, Currency, CultureInfo.CurrentCulture)];
+        }
+
+        return label;
+    }
 
     private int? ResolveSelectedMenuId(DayViewDto day) =>
         PendingSelections.TryGetValue(day.Date, out var pending) ? pending : day.SelectedMenuId;

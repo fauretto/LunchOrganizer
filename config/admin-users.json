@@ -1,5 +1,9 @@
 {
   "Users": [
-    { "Username": "massimo", "DisplayName": "Massimo Fauro", "Password": "pbkdf2-sha256:210000:2ANEIShOZwYm0snpGdtfpw==:hDKaQFCo7NK59Kih+vRNiMCZl+B1I4DaDUMchwm5Lrc=" }
+    {
+      "Username": "massimo",
+      "DisplayName": "Massimo Fauro",
+      "Password": "pbkdf2-sha256:210000:rKDKhEuKOtA1cVhfdU1pfQ==:aG+uLewNiCJNhqCXP/zpO/CfrLw2A1T6IFbvvuDWOXg="
+    }
   ]
 }

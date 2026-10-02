@@ -50,6 +50,7 @@
                               CanDelete="Vm.CanDeleteMenu(menu)"
                               IsPastDate="Vm.IsMenuDateInPast(menu)"
                               OnUpdateDescription="(args) => Vm.UpdateMenuDescriptionAsync(args.MenuId, args.Description)"
+                              OnUpdatePrice="(args) => Vm.UpdateMenuPriceAsync(args.MenuId, args.Price)"
                               OnDelete="(id) => Vm.DeleteMenuAsync(menu)"
                               OnCopyToWeek="(id) => Vm.CopyDescriptionToWeekAsync(id)" />
                 }

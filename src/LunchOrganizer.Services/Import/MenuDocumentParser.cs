@@ -1,6 +1,8 @@
-﻿using LunchOrganizer.Domain.Common;
+using LunchOrganizer.Domain.Common;
 using LunchOrganizer.Services.Abstractions;
 using LunchOrganizer.Services.Dtos;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -11,19 +13,28 @@ using System.Xml.Linq;
 namespace LunchOrganizer.Services.Import;
 
 /// <summary>
-/// Parses the weekly-menu Word document (.docx) produced from the site's menu template into a
+/// Parses the monthly-menu Word document (.docx) produced from the site's menu template into a
 /// <see cref="ParsedMenuDocument"/>, using nothing but <see cref="System.IO.Compression.ZipArchive"/>
 /// and <see cref="System.Xml.Linq"/> (plan decision D1: zero third-party dependencies — no
 /// DocumentFormat.OpenXml or any other NuGet package). A .docx file is a zip archive; the visible
 /// content lives in the <c>word/document.xml</c> entry as WordprocessingML.
 ///
 /// <para>
-/// Observed document shape (from the real sample files analysed for this feature): the body is a
-/// flat sequence of top-level <c>w:tbl</c> elements, one per working week. Each table has 6 rows:
-/// a header row (<c>Jour | MENU 1 | MENU 2 | MENU 3...</c>) followed by 5 day rows, Monday through
-/// Friday. Cells are never merged — no <c>gridSpan</c>/<c>vMerge</c> is present anywhere. A
-/// multi-line description is a single paragraph within one cell containing <c>w:br</c> line
-/// breaks, not multiple paragraphs.
+/// Two document shapes are supported side by side, both observed in real sample files:
+/// </para>
+/// <para>
+/// <b>Old (weekly) format:</b> the body is a flat sequence of top-level <c>w:tbl</c> elements, one
+/// per working week, each with a header row (<c>Jour | MENU 1 | MENU 2 | MENU 3...</c>) followed by
+/// day rows. A day cell carries no year (e.g. <c>"LUNDI 17.12"</c>) and a description cell holds a
+/// single paragraph, possibly with <c>w:br</c> line breaks for a multi-line description.
+/// </para>
+/// <para>
+/// <b>New (monthly) format:</b> there is no header row — every row is a day row, and column
+/// position alone decides the menu number unless overridden (see below). A day cell carries a
+/// 2- or 4-digit year (e.g. <c>"LUNDI 05.10.26"</c>) and may have leading blank paragraphs before
+/// the day label. A description cell's FIRST non-empty paragraph may itself be a <c>"MENU n"</c>
+/// label (removed from the description once read), and its LAST non-empty line may end with a
+/// trailing price token (also removed, and captured as <see cref="ParsedMenuEntry.Price"/>).
 /// </para>
 ///
 /// <para>
@@ -31,7 +42,9 @@ namespace LunchOrganizer.Services.Import;
 /// entirely and never read by this parser. They are hand-typed prose, and in real sample files
 /// they were observed to name the wrong month or year — contradicting the table rows they
 /// supposedly label. Every date produced by this parser is derived solely from the day-row cells
-/// plus the caller-supplied <see cref="Parse"/> year; the captions are never consulted.
+/// plus the caller-supplied <see cref="Parse"/> year (cross-checked, for the new format, against
+/// the year encoded directly in the day cell — see <see cref="ErrorCodes.MenuImportYearMismatch"/>);
+/// the captions are never consulted.
 /// </para>
 ///
 /// <para>
@@ -60,19 +73,35 @@ public sealed class MenuDocumentParser : IMenuDocumentParser
     private static readonly XNamespace W = WordMainNamespace;
     private static readonly XNamespace Mc = MarkupCompatibilityNamespace;
 
-    // Matches a day-row's first cell, e.g. "LUNDI, 17.12" or "Jeudi 18/12.". Deliberately loose
-    // (day word can be anything alphabetic; separators between day-of-month and month can be
-    // '.', '-' or '/') because the template has been retyped by hand across many months and its
-    // exact punctuation is not reliable. A 250ms timeout guards against pathological input on an
-    // otherwise attacker-uncontrolled but hand-authored document.
+    // Matches a day-row's first cell, e.g. "LUNDI, 17.12", "Jeudi 18/12.", or (new monthly format)
+    // "LUNDI 05.10.26" / "LUNDI 05.10.2026". Deliberately loose (day word can be anything
+    // alphabetic; separators between day-of-month/month/year can be '.', '-' or '/') because the
+    // template has been retyped by hand across many months and its exact punctuation is not
+    // reliable. The year is optional and, when present, is captured in group "y" as either 2 or 4
+    // digits (see MatchedDayRow.DocumentYear for how it is interpreted). A 250ms timeout guards
+    // against pathological input on an otherwise attacker-uncontrolled but hand-authored document.
     private static readonly Regex DayCellRegex = new(
-        @"^(?<day>\p{L}+)\s*,?\s*(?<d>\d{1,2})\s*[.\-/]\s*(?<m>\d{1,2})\.?$",
+        @"^(?<day>\p{L}+)\s*,?\s*(?<d>\d{1,2})\s*[.\-/]\s*(?<m>\d{1,2})(?:\s*[.\-/]\s*(?<y>\d{4}|\d{2}))?\.?$",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled,
         TimeSpan.FromMilliseconds(250));
 
-    // Matches a header cell declaring which menu number a column holds, e.g. "MENU 1".
+    // Matches a header cell (old format) OR an in-cell label paragraph (new format) declaring
+    // which menu number a column/cell holds, e.g. "MENU 1".
     private static readonly Regex MenuHeaderRegex = new(
         @"^\s*MENU\s*(?<n>\d+)\s*$",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled,
+        TimeSpan.FromMilliseconds(250));
+
+    // Matches a trailing price token at the end of a description's last line, e.g. "14.80-",
+    // "14,80.", "CHF 14.80", "Fr. 14.80–". The token itself is an optional CHF/Fr./Fr prefix, then
+    // a 1-3 digit integer part + 2 decimal digits (separated by '.' or ','), then optional trailing
+    // dash/dot/en-dash "noise" characters some months' authors append, all anchored to the end of
+    // the line and required to be preceded by either the start of the line or whitespace (so a
+    // size/count suffix glued onto a word, e.g. "Pizza 14cm" or "(2pcs)", never matches: those have
+    // no decimal separator followed by exactly two digits). A 250ms timeout guards against
+    // pathological input on an otherwise attacker-uncontrolled but hand-authored document.
+    private static readonly Regex TrailingPriceRegex = new(
+        @"(?<=^|\s)(?:(?:CHF|Fr\.|Fr)\s*)?(?<price>\d{1,3}[.,]\d{2})[\-.–]*$",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled,
         TimeSpan.FromMilliseconds(250));
 
@@ -105,13 +134,31 @@ public sealed class MenuDocumentParser : IMenuDocumentParser
         ["SUNDAY"] = DayOfWeek.Sunday,
     };
 
+    private readonly ILogger<MenuDocumentParser> _logger;
+
+    /// <summary>
+    /// Parameterless constructor for call sites (tests, ad-hoc tools) that have no logger to
+    /// supply; logs go nowhere via <see cref="NullLogger{T}"/>. Production DI registration
+    /// (<c>ServicesServiceCollectionExtensions</c>) resolves the other constructor instead.
+    /// </summary>
+    public MenuDocumentParser()
+        : this(NullLogger<MenuDocumentParser>.Instance)
+    {
+    }
+
+    public MenuDocumentParser(ILogger<MenuDocumentParser> logger)
+    {
+        _logger = logger;
+    }
+
     /// <summary>
     /// One recognized day row before its calendar year has been resolved: everything the first
     /// XML pass can determine on its own (which table it came from, its raw label, its
-    /// day-of-month/month numbers, and its already-extracted, already-ordered menu entries).
-    /// Kept internal to the single-pass construction described in the class summary: the year
-    /// (and hence the final <see cref="DateOnly"/>) can only be known once every row up to this
-    /// one has been seen, in document order, by the rollover algorithm.
+    /// day-of-month/month numbers, the year encoded directly in the cell if any, and its
+    /// already-extracted, already-ordered menu entries). Kept internal to the single-pass
+    /// construction described in the class summary: the final year (and hence the final
+    /// <see cref="DateOnly"/>) can only be known once every row up to this one has been seen, in
+    /// document order, by the rollover algorithm.
     /// </summary>
     private sealed record MatchedDayRow(
         int TableIndex,
@@ -119,6 +166,7 @@ public sealed class MenuDocumentParser : IMenuDocumentParser
         string DayWordRaw,
         int Month,
         int Day,
+        int? DocumentYear,
         IReadOnlyList<ParsedMenuEntry> Menus);
 
     /// <inheritdoc />
@@ -148,9 +196,10 @@ public sealed class MenuDocumentParser : IMenuDocumentParser
         var tables = body.Elements(W + "tbl").ToList();
 
         var matchedRows = new List<MatchedDayRow>();
+        var anyInCellLabelUsed = false;
         for (var tableIndex = 0; tableIndex < tables.Count; tableIndex++)
         {
-            CollectMatchedRows(tables[tableIndex], tableIndex, matchedRows);
+            CollectMatchedRows(tables[tableIndex], tableIndex, matchedRows, ref anyInCellLabelUsed);
         }
 
         var resolvedDays = ResolveDates(matchedRows, year);
@@ -172,6 +221,16 @@ public sealed class MenuDocumentParser : IMenuDocumentParser
         foreach (var (row, date) in resolvedDays)
         {
             var parsedDay = new ParsedMenuDay(date, row.RawLabel, row.Menus);
+
+            foreach (var menu in parsedDay.Menus)
+            {
+                if (menu.Price is { } extractedPrice)
+                {
+                    _logger.LogDebug(
+                        "Extracted price for {Date:yyyy-MM-dd}, menu {MenuNumber}: {Price}.",
+                        date, menu.MenuNumber, extractedPrice);
+                }
+            }
 
             var strippedDayWord = StripDiacritics(row.DayWordRaw);
             DayOfWeek? labelDayOfWeek = DayNames.TryGetValue(strippedDayWord, out var mappedDayOfWeek)
@@ -223,6 +282,19 @@ public sealed class MenuDocumentParser : IMenuDocumentParser
         }
 
         var weeksParsed = matchedRows.Select(r => r.TableIndex).Distinct().Count();
+
+        var documentYearsFound = matchedRows
+            .Select(r => r.DocumentYear)
+            .Where(y => y.HasValue)
+            .Select(y => y!.Value)
+            .Distinct()
+            .OrderBy(y => y)
+            .ToList();
+        var menusWithPriceCount = workingDays.Sum(d => d.Menus.Count(m => m.Price.HasValue));
+
+        _logger.LogInformation(
+            "Parsed menu document: {TableCount} table(s), {DayRowCount} day row(s), in-cell menu labels used: {InCellLabelsUsed}, document year(s) found: {DocumentYears}, menu(s) with an explicit price: {MenusWithPrice}.",
+            tables.Count, matchedRows.Count, anyInCellLabelUsed, string.Join(",", documentYearsFound), menusWithPriceCount);
 
         return new ParsedMenuDocument(weeksParsed, workingDays, skippedNonWorkingDays, weekdayMismatches);
     }
@@ -281,12 +353,14 @@ public sealed class MenuDocumentParser : IMenuDocumentParser
 
     /// <summary>
     /// Walks one top-level table's rows exactly once, identifying its header row (for
-    /// column-to-menu-number mapping) and appending every recognized day row to
+    /// column-to-menu-number mapping, old format only) and appending every recognized day row to
     /// <paramref name="matchedRows"/>, complete with its already-extracted, already-ordered menu
     /// entries. This is the only place cell text is extracted from the XML tree; nothing here is
-    /// re-walked in a later pass.
+    /// re-walked in a later pass. <paramref name="anyInCellLabelUsed"/> is set to <see langword="true"/>
+    /// the first time any description cell's own first paragraph is used as its "MENU n" label
+    /// (new format), purely for the end-of-parse summary log.
     /// </summary>
-    private static void CollectMatchedRows(XElement table, int tableIndex, List<MatchedDayRow> matchedRows)
+    private static void CollectMatchedRows(XElement table, int tableIndex, List<MatchedDayRow> matchedRows, ref bool anyInCellLabelUsed)
     {
         var rows = table.Elements(W + "tr").ToList();
         if (rows.Count == 0)
@@ -308,8 +382,10 @@ public sealed class MenuDocumentParser : IMenuDocumentParser
         }
 
         // The header row is the FIRST row whose cell 0 does not look like a day label. This
-        // tolerates both the normal "Jour | MENU 1 | ..." header and a template variant with no
-        // header row at all (in which case every column falls back to positional numbering).
+        // tolerates both the normal "Jour | MENU 1 | ..." header and the new monthly template,
+        // which has no header row at all (every row matches the day regex, so headerCells stays
+        // null and every column falls back to positional numbering, possibly overridden per-cell
+        // by an in-cell "MENU n" label -- see the loop below).
         List<XElement>? headerCells = null;
         foreach (var info in rowInfos)
         {
@@ -336,33 +412,120 @@ public sealed class MenuDocumentParser : IMenuDocumentParser
             var day = int.Parse(match.Groups["d"].Value, CultureInfo.InvariantCulture);
             var month = int.Parse(match.Groups["m"].Value, CultureInfo.InvariantCulture);
 
+            int? documentYear = null;
+            if (match.Groups["y"].Success)
+            {
+                var yearText = match.Groups["y"].Value;
+                var parsedYear = int.Parse(yearText, CultureInfo.InvariantCulture);
+                // A 2-digit year ("26") means 2000+26; a 4-digit year ("2026") is used as-is.
+                documentYear = yearText.Length == 2 ? 2000 + parsedYear : parsedYear;
+            }
+
             var menus = new List<ParsedMenuEntry>();
             for (var columnIndex = 1; columnIndex < info.Cells.Count; columnIndex++)
             {
-                var description = ExtractCellText(info.Cells[columnIndex]);
-                if (description.Length == 0)
+                var paragraphLines = ExtractNormalizedParagraphLines(info.Cells[columnIndex]);
+                if (paragraphLines.Count == 0)
                 {
                     continue; // a blank description cell contributes no entry for this column
                 }
 
-                var menuNumber = columnMenuNumbers.TryGetValue(columnIndex, out var mapped)
-                    ? mapped
-                    : columnIndex; // positional fallback: column 1 => menu 1, column 2 => menu 2, ...
-                menus.Add(new ParsedMenuEntry(menuNumber, description));
+                // In-cell "MENU n" label (new format): when the cell's FIRST non-empty paragraph
+                // fully matches MenuHeaderRegex, it is a label, not part of the description -- use
+                // its number and remove the paragraph from the description.
+                int? inCellMenuNumber = null;
+                var labelMatch = MenuHeaderRegex.Match(paragraphLines[0]);
+                if (labelMatch.Success && int.TryParse(labelMatch.Groups["n"].Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var labelNumber))
+                {
+                    inCellMenuNumber = labelNumber;
+                    anyInCellLabelUsed = true;
+                    paragraphLines = paragraphLines.Skip(1).ToList();
+
+                    if (paragraphLines.Count == 0)
+                    {
+                        // A label with nothing after it contributes no entry -- same as a blank cell.
+                        continue;
+                    }
+                }
+
+                var price = ExtractTrailingPrice(ref paragraphLines);
+
+                if (paragraphLines.Count == 0)
+                {
+                    // The only remaining line WAS the price token itself (e.g. a cell whose last
+                    // paragraph held only "14.80-"); nothing is left to describe the menu with.
+                    continue;
+                }
+
+                var description = string.Join(", ", paragraphLines);
+
+                // Menu number priority: in-cell label > header-row map > column position.
+                var menuNumber = inCellMenuNumber
+                    ?? (columnMenuNumbers.TryGetValue(columnIndex, out var mapped) ? mapped : columnIndex);
+
+                menus.Add(new ParsedMenuEntry(menuNumber, description, price));
             }
 
             menus.Sort((a, b) => a.MenuNumber.CompareTo(b.MenuNumber));
 
-            matchedRows.Add(new MatchedDayRow(tableIndex, info.Cell0Raw, dayWordRaw, month, day, menus));
+            matchedRows.Add(new MatchedDayRow(tableIndex, info.Cell0Raw, dayWordRaw, month, day, documentYear, menus));
         }
     }
 
     /// <summary>
+    /// Inspects the LAST element of <paramref name="paragraphLines"/> for a trailing price token
+    /// (see <see cref="TrailingPriceRegex"/>). When found and the parsed value is in the accepted
+    /// range (0, 1000], the token is stripped from that line (dropping the line entirely if it
+    /// becomes empty) and the price is returned; <paramref name="paragraphLines"/> is replaced
+    /// in-place with the updated list. A price outside the accepted range, or no match at all, is
+    /// simply ignored: the text is left untouched and <see langword="null"/> is returned.
+    /// </summary>
+    private static decimal? ExtractTrailingPrice(ref List<string> paragraphLines)
+    {
+        var lastIndex = paragraphLines.Count - 1;
+        var lastLine = paragraphLines[lastIndex];
+
+        var match = TrailingPriceRegex.Match(lastLine);
+        if (!match.Success)
+        {
+            return null;
+        }
+
+        var priceText = match.Groups["price"].Value.Replace(',', '.');
+        if (!decimal.TryParse(priceText, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var price)
+            || price <= 0 || price > 1000)
+        {
+            // Out-of-range "price-shaped" text (e.g. a stray measurement) -- keep the text as-is.
+            return null;
+        }
+
+        // TrimEnd(',') guards against a last line that was itself produced by NormalizeCellText
+        // joining multiple w:br-separated sub-lines with ", " (e.g. "Garniture, 14.80-" from a
+        // single paragraph) -- stripping the price token alone would otherwise leave a dangling
+        // trailing comma.
+        var strippedLine = lastLine[..match.Index].TrimEnd().TrimEnd(',').TrimEnd();
+
+        var updatedLines = new List<string>(paragraphLines);
+        if (strippedLine.Length == 0)
+        {
+            updatedLines.RemoveAt(lastIndex);
+        }
+        else
+        {
+            updatedLines[lastIndex] = strippedLine;
+        }
+
+        paragraphLines = updatedLines;
+        return price;
+    }
+
+    /// <summary>
     /// Builds the column-index -> menu-number map for one table from its header row (or an empty
-    /// map when there is none, meaning every column falls back to its own position). Columns that
-    /// don't match "MENU n" are simply left unmapped rather than causing an error -- combined with
-    /// the positional fallback applied by the caller, this is what makes the parser tolerant of
-    /// the template's 2-column and 4-column variants alike.
+    /// map when there is none, meaning every column falls back to its own position, possibly
+    /// overridden per-cell by an in-cell label). Columns that don't match "MENU n" are simply left
+    /// unmapped rather than causing an error -- combined with the positional fallback applied by
+    /// the caller, this is what makes the parser tolerant of the template's 2-column and 4-column
+    /// variants alike.
     /// </summary>
     private static Dictionary<int, int> BuildColumnMenuNumberMap(List<XElement>? headerCells)
     {
@@ -388,9 +551,13 @@ public sealed class MenuDocumentParser : IMenuDocumentParser
     /// <summary>
     /// Resolves the calendar year for every matched row, across ALL tables, in document order --
     /// not per-table, because a December week and a January week can legitimately live in two
-    /// separate top-level tables, and both cases must be handled by the same single sweep.
+    /// separate top-level tables, and both cases must be handled by the same single sweep. For a
+    /// row whose cell encoded its own year (new format), the resolved date's year is cross-checked
+    /// against it once rollover has been applied -- a mismatch is a hard, fail-fast error (see
+    /// <see cref="ErrorCodes.MenuImportYearMismatch"/>): the document itself disagrees with the
+    /// year the caller selected, so silently trusting the caller's year would misfile real data.
     /// </summary>
-    private static List<(MatchedDayRow Row, DateOnly Date)> ResolveDates(List<MatchedDayRow> matchedRows, int year)
+    private List<(MatchedDayRow Row, DateOnly Date)> ResolveDates(List<MatchedDayRow> matchedRows, int year)
     {
         var resolved = new List<(MatchedDayRow Row, DateOnly Date)>(matchedRows.Count);
 
@@ -452,6 +619,23 @@ public sealed class MenuDocumentParser : IMenuDocumentParser
             }
 
             var date = new DateOnly(currentYear, row.Month, row.Day);
+
+            if (row.DocumentYear is { } documentYear && documentYear != date.Year)
+            {
+                // Near-certain proof the caller selected the wrong import year: the document's own
+                // day cell states a year that disagrees with the one just resolved. Must fail fast,
+                // the same way MenuImportWeekdayMismatch does, rather than silently importing under
+                // the wrong year.
+                _logger.LogWarning(
+                    "Day row {RawLabel} states year {DocumentYear} but the selected import year is {SelectedYear} (resolved date {Date:yyyy-MM-dd}).",
+                    row.RawLabel, documentYear, year, date);
+
+                throw new MenuDocumentParseException(
+                    ErrorCodes.MenuImportYearMismatch,
+                    $"Day row '{row.RawLabel}' belongs to year {documentYear} according to the document, but the selected import year is {year}.",
+                    new object?[] { row.RawLabel, year, documentYear });
+            }
+
             previousKey = key;
             previousResolvedDate = date;
             resolved.Add((row, date));
@@ -497,6 +681,33 @@ public sealed class MenuDocumentParser : IMenuDocumentParser
         var paragraphTexts = tc.Elements(W + "p").Select(ExtractParagraphText);
         var joined = string.Join('\n', paragraphTexts);
         return NormalizeCellText(joined);
+    }
+
+    /// <summary>
+    /// Extracts one table cell's paragraphs as SEPARATE normalized, non-empty, single-line
+    /// strings -- unlike <see cref="ExtractCellText"/>, which joins every paragraph into one
+    /// string, this keeps paragraph boundaries visible to the caller. That is what lets a day
+    /// row's description cell be inspected paragraph-by-paragraph: its first paragraph for an
+    /// in-cell "MENU n" label, and its last for a trailing price. A blank paragraph (including any
+    /// leading empty paragraphs some new-format cells have before their real content) contributes
+    /// nothing to the result. Each returned line is independently run through
+    /// <see cref="NormalizeCellText"/>, so a paragraph that itself contains <c>w:br</c>-induced
+    /// line breaks still collapses to the same single comma-joined line
+    /// <see cref="MenuHeaderRegex"/>/<see cref="TrailingPriceRegex"/> are matched against.
+    /// </summary>
+    private static List<string> ExtractNormalizedParagraphLines(XElement tc)
+    {
+        var lines = new List<string>();
+        foreach (var paragraph in tc.Elements(W + "p"))
+        {
+            var normalized = NormalizeCellText(ExtractParagraphText(paragraph));
+            if (normalized.Length > 0)
+            {
+                lines.Add(normalized);
+            }
+        }
+
+        return lines;
     }
 
     /// <summary>

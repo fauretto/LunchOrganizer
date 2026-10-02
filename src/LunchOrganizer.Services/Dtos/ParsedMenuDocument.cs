@@ -3,9 +3,10 @@ namespace LunchOrganizer.Services.Dtos;
 /// <summary>
 /// One non-empty menu-number/description pair extracted from a day's row.
 /// </summary>
-/// <param name="MenuNumber">The menu's number within the day (1-based; column position in the document, or the header's declared "MENU n").</param>
+/// <param name="MenuNumber">The menu's number within the day (1-based; column position in the document, the header's declared "MENU n", or an in-cell "MENU n" label).</param>
 /// <param name="Description">The non-empty, whitespace-normalized menu description text.</param>
-public sealed record ParsedMenuEntry(int MenuNumber, string Description);
+/// <param name="Price">The price stated in the document for this menu, overriding the day price; null when the document states none.</param>
+public sealed record ParsedMenuEntry(int MenuNumber, string Description, decimal? Price = null);
 
 /// <summary>
 /// One recognized day row: its resolved calendar date, the raw day-label text as it appeared in

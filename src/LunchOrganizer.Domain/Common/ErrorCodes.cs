@@ -90,6 +90,13 @@ public static class ErrorCodes
     /// </summary>
     public const string MenuImportWeekdayMismatch = "MenuImportWeekdayMismatch";
 
+    /// <summary>
+    /// A day row's cell encodes its own year (new monthly format, e.g. "LUNDI 05.10.26") and it
+    /// disagrees with the resolved date's year under the caller-selected import year.
+    /// arg0: the offending day cell text. arg1: the selected import year. arg2: the year stated in the document.
+    /// </summary>
+    public const string MenuImportYearMismatch = "MenuImportYearMismatch";
+
     /// <summary>The database already contains menus for one or more of the imported dates. arg0: count of conflicting dates, arg1: the conflicting dates as a pre-joined string.</summary>
     public const string MenuImportDuplicateMenusExist = "MenuImportDuplicateMenusExist";
 

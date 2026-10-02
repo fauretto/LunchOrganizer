@@ -69,6 +69,25 @@ internal sealed class FakeMenuService(FakeDataStore store, IClock clock) : IMenu
         return Task.FromResult(OperationResult<MenuDto>.Ok(ToDto(menu)));
     }
 
+    public Task<OperationResult<MenuDto>> UpdatePriceAsync(int menuId, decimal? price, CancellationToken ct = default)
+    {
+        if (price is { } p && (p < 0 || p > 1000))
+        {
+            return Task.FromResult(OperationResult<MenuDto>.Fail("Invalid price.", ErrorCodes.PriceInvalid));
+        }
+
+        if (!store.Menus.TryGetValue(menuId, out var menu))
+        {
+            return Task.FromResult(OperationResult<MenuDto>.Fail("Menu not found.", "NOT_FOUND"));
+        }
+
+        menu.Price = price;
+        menu.UpdatedAtUtc = clock.UtcNow;
+        menu.Version++;
+
+        return Task.FromResult(OperationResult<MenuDto>.Ok(ToDto(menu)));
+    }
+
     public Task<OperationResult> DeleteAsync(int menuId, CancellationToken ct = default)
     {
         if (!store.Menus.TryGetValue(menuId, out var menu))
@@ -112,6 +131,7 @@ internal sealed class FakeMenuService(FakeDataStore store, IClock clock) : IMenu
             }
 
             target.Description = source.Description;
+            target.Price = source.Price;
             target.UpdatedAtUtc = now;
             target.Version++;
             updated++;
@@ -121,5 +141,5 @@ internal sealed class FakeMenuService(FakeDataStore store, IClock clock) : IMenu
     }
 
     private MenuDto ToDto(Menu m) =>
-        new(m.Id, m.MenuDate, m.MenuNumber, m.Description, store.Bookings.Values.Count(b => b.MenuId == m.Id));
+        new(m.Id, m.MenuDate, m.MenuNumber, m.Description, store.Bookings.Values.Count(b => b.MenuId == m.Id), m.Price);
 }

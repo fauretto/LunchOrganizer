@@ -166,6 +166,12 @@
   <data name="GridCellSelectAriaLabelTemplate" xml:space="preserve">
     <value>{0}, Menu {1}, {2} — sélectionner</value>
   </data>
+  <data name="GridCellMenuPriceAriaLabelSuffixTemplate" xml:space="preserve">
+    <value>, ce menu : {0}</value>
+  </data>
+  <data name="GridCellMenuPriceTooltip" xml:space="preserve">
+    <value>Ce menu a son propre prix</value>
+  </data>
   <data name="ApplyMenuToWeekButtonTemplate" xml:space="preserve">
     <value>Appliquer le menu {0} à tous les jours ouverts</value>
   </data>

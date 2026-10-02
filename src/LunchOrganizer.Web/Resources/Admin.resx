@@ -196,6 +196,12 @@
   <data name="MenusDescriptionPlaceholder" xml:space="preserve">
     <value>e.g. Grilled chicken with rice</value>
   </data>
+  <data name="MenusMenuPriceLabel" xml:space="preserve">
+    <value>Price</value>
+  </data>
+  <data name="MenusMenuPricePlaceholder" xml:space="preserve">
+    <value>Day price</value>
+  </data>
   <data name="MenusDeleteConfirmTemplate" xml:space="preserve">
     <value>{0} people have already chosen this menu, so it can’t be removed.</value>
   </data>

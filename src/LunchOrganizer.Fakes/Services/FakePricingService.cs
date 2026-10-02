@@ -15,6 +15,16 @@ internal sealed class FakePricingService(FakeDataStore store, IClock clock) : IP
         return Task.FromResult(price);
     }
 
+    public Task<decimal> GetEffectivePriceAsync(Menu menu, CancellationToken ct = default)
+    {
+        if (menu.Price is { } menuPrice)
+        {
+            return Task.FromResult(menuPrice);
+        }
+
+        return GetEffectivePriceAsync(menu.MenuDate, ct);
+    }
+
     public Task<IReadOnlyList<DailyPriceDto>> GetPricesForWeekAsync(DateOnly monday, CancellationToken ct = default)
     {
         var result = DateHelpers.WorkingDays(monday)

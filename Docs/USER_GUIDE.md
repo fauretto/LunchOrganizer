@@ -108,9 +108,9 @@ The administration area has three tabs.
 
 This is the tab used most often, usually once a week.
 
-**Menus.** Pick a week, then for each day add menus with **Ajouter un menu** *(Add a menu)* and write a description — *"Poulet au curry, riz basmati"*. Menus are numbered automatically from 1. A menu belongs to **one specific date**: setting up Monday says nothing about Tuesday. **Copier cette description sur toute la semaine** *(Copy this description across the whole week)* saves retyping when the same dish runs several days.
+**Menus.** Pick a week, then for each day add menus with **Ajouter un menu** *(Add a menu)* and write a description — *"Poulet au curry, riz basmati"*. Menus are numbered automatically from 1. A menu belongs to **one specific date**: setting up Monday says nothing about Tuesday. **Copier cette description sur toute la semaine** *(Copy this description across the whole week)* saves retyping when the same dish runs several days. Menus can also be imported in bulk from a Word document with **Importer des menus** *(Import menus)*; the newer monthly layout — day cells with no header row, each stating its own day and year — is supported, but the import is refused if the year written in the document doesn't match the year selected in the import dialog.
 
-**Prices.** Each day has one price shared by all of that day's menus. Set it per day, or use **Appliquer ce prix à toute la semaine** *(Apply this price to the whole week)*. New days start from the default price in `config/app.json` (currently **CHF 12.50**).
+**Prices.** Each day has one price shared by all of that day's menus. Set it per day, or use **Appliquer ce prix à toute la semaine** *(Apply this price to the whole week)*. New days start from the default price in `config/app.json` (currently **CHF 12.50**). A menu can also have its own price, set in a small field next to its description — leave it blank to use the day's price instead — and this price can also arrive automatically from an imported document when the document states one.
 
 > **Changing a price never rewrites the past.** Each booking stores the price at the moment it was made. If Tuesday's price changes after ten people have booked, those ten keep the price they booked at and the report stays correct. Prices only ever apply going forward.
 

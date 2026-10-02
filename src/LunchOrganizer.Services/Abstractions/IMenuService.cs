@@ -10,6 +10,9 @@ public interface IMenuService
     Task<OperationResult<MenuDto>> AddMenuAsync(DateOnly date, string? description, CancellationToken ct = default);
     Task<OperationResult<MenuDto>> UpdateDescriptionAsync(int menuId, string? description, CancellationToken ct = default);
 
+    /// <summary>Sets or clears (when <paramref name="price"/> is null) this menu's price override. Null means the day's price applies.</summary>
+    Task<OperationResult<MenuDto>> UpdatePriceAsync(int menuId, decimal? price, CancellationToken ct = default);
+
     /// <summary>Deletable only if the menu date is today-or-future and it has zero bookings (plan §3.3).</summary>
     Task<OperationResult> DeleteAsync(int menuId, CancellationToken ct = default);
 

@@ -309,6 +309,18 @@ public sealed class AdminMenusViewModel : ViewModelBase
         }
     });
 
+    public Task UpdateMenuPriceAsync(int menuId, decimal? price) => RunGuardedAsync(async () =>
+    {
+        var result = await _menuService.UpdatePriceAsync(menuId, price);
+
+        await ReloadWeekDataAsync();
+
+        if (!result.IsSuccess)
+        {
+            _toastService.ShowError(_errorResolver.Resolve(result.ErrorCode, result.MessageArgs));
+        }
+    });
+
     /// <summary>
     /// Implements CONTRACT GAP #3's delete-guard precedence: past-date check first, then
     /// booking-count check, then the actual deletable case. The first two branches are defensive

@@ -6,6 +6,7 @@ using LunchOrganizer.Domain.Enums;
 using LunchOrganizer.Domain.Time;
 using LunchOrganizer.Services.Abstractions;
 using LunchOrganizer.Services.Dtos;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace LunchOrganizer.Services.Services;
@@ -17,7 +18,8 @@ public sealed class BookingService(
     IPricingService pricingService,
     IClock clock,
     IOptionsMonitor<AppOptions> appOptions,
-    IBookingChangeNotifier notifier) : IBookingService
+    IBookingChangeNotifier notifier,
+    ILogger<BookingService> logger) : IBookingService
 {
     public async Task<WeekViewDto> GetWeekViewAsync(int employeeId, WeekIdentifier week, CancellationToken ct = default)
     {
@@ -38,7 +40,7 @@ public sealed class BookingService(
             var dayMenus = menus
                 .Where(m => m.MenuDate == date)
                 .OrderBy(m => m.MenuNumber)
-                .Select(m => new MenuDto(m.Id, m.MenuDate, m.MenuNumber, m.Description, allBookings.Count(b => b.MenuId == m.Id)))
+                .Select(m => new MenuDto(m.Id, m.MenuDate, m.MenuNumber, m.Description, allBookings.Count(b => b.MenuId == m.Id), m.Price)) // Price: per-menu override shown in the booking grid
                 .ToList();
             var selectedMenuId = allBookings.FirstOrDefault(b => b.EmployeeId == employeeId && b.BookingDate == date)?.MenuId;
 
@@ -76,7 +78,11 @@ public sealed class BookingService(
             return OperationResult<BookingDto>.Fail("Employee not found.", ErrorCodes.EmployeeNotFound);
         }
 
-        var price = await pricingService.GetEffectivePriceAsync(request.BookingDate, ct);
+        var price = await pricingService.GetEffectivePriceAsync(menu, ct);
+
+        logger.LogDebug(
+            "Resolved booking price {Price} for {EmployeeId} on {BookingDate}, menu {MenuId}, source: {PriceSource}.",
+            price, request.EmployeeId, request.BookingDate, request.MenuId, menu.Price is not null ? "menu override" : "day price");
 
         var saved = await bookingRepo.UpsertAsync(
             new Booking
@@ -160,7 +166,12 @@ public sealed class BookingService(
                 continue;
             }
 
-            var price = await pricingService.GetEffectivePriceAsync(date, ct);
+            var price = await pricingService.GetEffectivePriceAsync(menu, ct);
+
+            logger.LogDebug(
+                "Resolved booking price {Price} for {EmployeeId} on {Date}, menu {MenuId}, source: {PriceSource}.",
+                price, request.EmployeeId, date, menu.Id, menu.Price is not null ? "menu override" : "day price");
+
             toApply.Add((date, menu.Id, price));
         }
 

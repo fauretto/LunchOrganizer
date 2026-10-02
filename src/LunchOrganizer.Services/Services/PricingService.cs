@@ -16,6 +16,16 @@ public sealed class PricingService(IDailyPriceRepository repo, IOptionsMonitor<A
         return p?.Price ?? appOptions.CurrentValue.DefaultLunchPrice;
     }
 
+    public async Task<decimal> GetEffectivePriceAsync(Menu menu, CancellationToken ct = default)
+    {
+        if (menu.Price is { } menuPrice)
+        {
+            return menuPrice;
+        }
+
+        return await GetEffectivePriceAsync(menu.MenuDate, ct);
+    }
+
     public async Task<IReadOnlyList<DailyPriceDto>> GetPricesForWeekAsync(DateOnly monday, CancellationToken ct = default)
     {
         var defaultPrice = appOptions.CurrentValue.DefaultLunchPrice;

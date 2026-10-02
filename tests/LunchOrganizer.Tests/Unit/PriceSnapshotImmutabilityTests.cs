@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using LunchOrganizer.Domain.Configuration;
 using LunchOrganizer.Domain.Entities;
 using LunchOrganizer.Services.Dtos;
@@ -34,7 +35,7 @@ public sealed class PriceSnapshotImmutabilityTests
         var originalPrice = 12.50m;
         await priceRepo.UpsertAsync(new DailyPrice { PriceDate = BookingDate, Price = originalPrice });
 
-        var service = new BookingService(bookingRepo, menuRepo, employeeRepo, pricingService, clock, appOptions, notifier);
+        var service = new BookingService(bookingRepo, menuRepo, employeeRepo, pricingService, clock, appOptions, notifier, NullLogger<BookingService>.Instance);
 
         var bookResult = await service.BookDayAsync(new BookingRequest(employee.Id, BookingDate, menu.Id));
         bookResult.IsSuccess.Should().BeTrue();

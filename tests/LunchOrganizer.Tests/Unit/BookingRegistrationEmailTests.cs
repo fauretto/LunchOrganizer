@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using LunchOrganizer.Domain.Configuration;
 using LunchOrganizer.Domain.Entities;
 using LunchOrganizer.Email.Validation;
@@ -31,7 +32,7 @@ public sealed class BookingRegistrationEmailTests
         var weekService = new WeekService(clock);
         var employeeService = new EmployeeService(employeeRepo, appOptions);
         var notifier = new FakeBookingChangeNotifier();
-        var bookingService = new BookingService(bookingRepo, menuRepo, employeeRepo, pricingService, clock, appOptions, notifier);
+        var bookingService = new BookingService(bookingRepo, menuRepo, employeeRepo, pricingService, clock, appOptions, notifier, NullLogger<BookingService>.Instance);
 
         var vm = new BookingViewModel(
             bookingService, employeeService, weekService, notifier, clock, appOptions,

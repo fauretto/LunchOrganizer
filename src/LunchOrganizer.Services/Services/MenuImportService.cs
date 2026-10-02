@@ -180,7 +180,8 @@ public sealed class MenuImportService(
             {
                 MenuDate = day.Date,
                 MenuNumber = entry.MenuNumber,
-                Description = entry.Description
+                Description = entry.Description,
+                Price = entry.Price
             }))
             .OrderBy(m => m.MenuDate)
             .ThenBy(m => m.MenuNumber)
@@ -232,8 +233,11 @@ public sealed class MenuImportService(
         var menusImported = entities.Count;
         var firstDate = entities.Min(m => m.MenuDate);
         var lastDate = entities.Max(m => m.MenuDate);
+        var menusWithPriceCount = parsed.WorkingDays.Sum(d => d.Menus.Count(m => m.Price.HasValue));
 
-        logger.LogInformation("Imported {MenusImported} menu(s) across {DaysImported} day(s), {FirstDate}..{LastDate}.", menusImported, daysImported, firstDate, lastDate);
+        logger.LogInformation(
+            "Imported {MenusImported} menu(s) across {DaysImported} day(s), {FirstDate}..{LastDate}, {MenusWithPrice} with an explicit price.",
+            menusImported, daysImported, firstDate, lastDate, menusWithPriceCount);
 
         return OperationResult<MenuImportResultDto>.Ok(new MenuImportResultDto(
             parsed.WeeksParsed, daysImported, menusImported, firstDate, lastDate, parsed.SkippedNonWorkingDays.Count));

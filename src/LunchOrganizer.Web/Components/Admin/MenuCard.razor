@@ -1,4 +1,6 @@
+@using System.Globalization
 @using LunchOrganizer.Services.Dtos
+@using LunchOrganizer.Web.Formatting
 @inject IStringLocalizer<LunchOrganizer.Web.Resources.Admin> Loc
 @inject IStringLocalizer<LunchOrganizer.Web.Resources.Shared> SharedLoc
 
@@ -15,6 +17,20 @@
                @bind="_descriptionDraft"
                @bind:event="oninput"
                @onblur="HandleBlurAsync" />
+    </div>
+
+    <div class="menu-card-field">
+        <label for="menu-price-@Menu.Id">@Loc["MenusMenuPriceLabel"]</label>
+        <input id="menu-price-@Menu.Id"
+               class="menu-card-price-input"
+               placeholder="@Loc["MenusMenuPricePlaceholder"]"
+               @bind="_priceDraft"
+               @bind:event="oninput"
+               @onblur="HandlePriceBlurAsync" />
+        @if (_showInvalidPrice)
+        {
+            <span class="menu-card-invalid-price">@Loc["MenusInvalidPrice"]</span>
+        }
     </div>
 
     <div class="menu-card-actions">
@@ -47,6 +63,9 @@
     public EventCallback<(int MenuId, string? Description)> OnUpdateDescription { get; set; }
 
     [Parameter]
+    public EventCallback<(int MenuId, decimal? Price)> OnUpdatePrice { get; set; }
+
+    [Parameter]
     public EventCallback<int> OnDelete { get; set; }
 
     [Parameter]
@@ -66,11 +85,16 @@
     private string _descriptionDraft = string.Empty;
     private int? _seededForMenuId;
 
+    private string _priceDraft = string.Empty;
+    private bool _showInvalidPrice;
+
     protected override void OnParametersSet()
     {
         if (_seededForMenuId != Menu.Id)
         {
             _descriptionDraft = Menu.Description ?? string.Empty;
+            _priceDraft = Menu.Price?.ToString("0.00", CultureInfo.CurrentCulture) ?? string.Empty;
+            _showInvalidPrice = false;
             _seededForMenuId = Menu.Id;
         }
     }
@@ -78,5 +102,24 @@
     private async Task HandleBlurAsync()
     {
         await OnUpdateDescription.InvokeAsync((Menu.Id, _descriptionDraft));
+    }
+
+    private async Task HandlePriceBlurAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_priceDraft))
+        {
+            _showInvalidPrice = false;
+            await OnUpdatePrice.InvokeAsync((Menu.Id, null));
+            return;
+        }
+
+        if (!PriceParser.TryParse(_priceDraft, out var parsed))
+        {
+            _showInvalidPrice = true;
+            return;
+        }
+
+        _showInvalidPrice = false;
+        await OnUpdatePrice.InvokeAsync((Menu.Id, (decimal?)parsed));
     }
 }

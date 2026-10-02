@@ -9,7 +9,10 @@ public class MenuConfiguration : IEntityTypeConfiguration<Menu>
     public void Configure(EntityTypeBuilder<Menu> builder)
     {
         builder.ToTable("menus", t =>
-            t.HasCheckConstraint("ck_menus_menu_number_positive", "menu_number >= 1"));
+        {
+            t.HasCheckConstraint("ck_menus_menu_number_positive", "menu_number >= 1");
+            t.HasCheckConstraint("ck_menus_price_non_negative", "price IS NULL OR price >= 0");
+        });
 
         builder.HasKey(m => m.Id);
 
@@ -30,6 +33,10 @@ public class MenuConfiguration : IEntityTypeConfiguration<Menu>
         builder.Property(m => m.Description)
             .HasColumnName("description")
             .HasColumnType("nvarchar(max)");
+
+        builder.Property(m => m.Price)
+            .HasColumnName("price")
+            .HasColumnType("decimal(10,2)");
 
         builder.Property(m => m.CreatedAtUtc)
             .HasColumnName("created_at_utc")

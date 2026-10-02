@@ -34,20 +34,20 @@ internal sealed class FakeBookingService(
         return new WeekViewDto(week, employeeId, employee?.FullName, days);
     }
 
-    public Task<OperationResult<BookingDto>> BookDayAsync(BookingRequest request, CancellationToken ct = default)
+    public async Task<OperationResult<BookingDto>> BookDayAsync(BookingRequest request, CancellationToken ct = default)
     {
         var editState = GetEditState(request.BookingDate);
         if (editState != DayEditState.Editable)
         {
-            return Task.FromResult(OperationResult<BookingDto>.Fail("This day can no longer be booked.", "LOCKED"));
+            return OperationResult<BookingDto>.Fail("This day can no longer be booked.", "LOCKED");
         }
 
         if (!store.Menus.TryGetValue(request.MenuId, out var menu) || menu.MenuDate != request.BookingDate)
         {
-            return Task.FromResult(OperationResult<BookingDto>.Fail("Menu not found for that date.", "NOT_FOUND"));
+            return OperationResult<BookingDto>.Fail("Menu not found for that date.", "NOT_FOUND");
         }
 
-        var price = EffectivePrice(request.BookingDate);
+        var price = await pricingService.GetEffectivePriceAsync(menu, ct);
         var booking = Upsert(request.EmployeeId, request.BookingDate, request.MenuId, price);
 
         store.Employees.TryGetValue(request.EmployeeId, out var employee);
@@ -61,7 +61,7 @@ internal sealed class FakeBookingService(
             menu.Description,
             booking.PriceSnapshot);
 
-        return Task.FromResult(OperationResult<BookingDto>.Ok(dto, "Booked."));
+        return OperationResult<BookingDto>.Ok(dto, "Booked.");
     }
 
     public Task<OperationResult> CancelDayAsync(int employeeId, DateOnly date, CancellationToken ct = default)
@@ -76,7 +76,7 @@ internal sealed class FakeBookingService(
         return Task.FromResult(OperationResult.Ok("Booking cancelled."));
     }
 
-    public Task<OperationResult<WeekBookingResultDto>> BookWeekAsync(WeekBookingRequest request, CancellationToken ct = default)
+    public async Task<OperationResult<WeekBookingResultDto>> BookWeekAsync(WeekBookingRequest request, CancellationToken ct = default)
     {
         var applied = new List<DateOnly>();
         var skipped = new List<SkippedDayDto>();
@@ -107,15 +107,12 @@ internal sealed class FakeBookingService(
                 continue;
             }
 
-            Upsert(request.EmployeeId, date, menu.Id, EffectivePrice(date));
+            Upsert(request.EmployeeId, date, menu.Id, await pricingService.GetEffectivePriceAsync(menu, ct));
             applied.Add(date);
         }
 
-        return Task.FromResult(OperationResult<WeekBookingResultDto>.Ok(new WeekBookingResultDto(applied, skipped)));
+        return OperationResult<WeekBookingResultDto>.Ok(new WeekBookingResultDto(applied, skipped));
     }
-
-    private decimal EffectivePrice(DateOnly date) =>
-        store.Prices.TryGetValue(date, out var p) ? p.Price : FakeDefaults.DefaultLunchPrice;
 
     private Booking Upsert(int employeeId, DateOnly date, int menuId, decimal price)
     {
