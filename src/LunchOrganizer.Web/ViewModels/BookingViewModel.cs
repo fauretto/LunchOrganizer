@@ -12,6 +12,8 @@ using LunchOrganizer.Web.Formatting;
 using LunchOrganizer.Web.Localization;
 using LunchOrganizer.Web.Resources;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 namespace LunchOrganizer.Web.ViewModels;
@@ -32,6 +34,7 @@ public sealed class BookingViewModel : ViewModelBase
     private readonly IErrorMessageResolver _errorResolver;
     private readonly IToastService _toastService;
     private readonly IPcUserContext? _pcUserContext;
+    private readonly ILogger<BookingViewModel> _logger;
 
     private bool _initialized;
 
@@ -41,6 +44,12 @@ public sealed class BookingViewModel : ViewModelBase
     // while it is running will normally describe a change already reflected once it completes; a
     // genuinely missed update is caught by whatever triggers the next notification.
     private bool _isHandlingChangeNotification;
+
+    // Set for the duration of this VM's own SaveAsync/ApplyMenuToWeekAsync body. While true,
+    // OnBookingChanged ignores incoming notifications instead of kicking off a concurrent reload that
+    // would reseed PendingSelections mid-submit (see SaveAsync's pendingSnapshot comment) — this VM
+    // already reloads itself at the end of the submit with the final, authoritative state.
+    private bool _isSubmittingOwnChanges;
 
     private WeekIdentifier? _currentWeek;
     private WeekIdentifier? _selectedWeek;
@@ -69,7 +78,8 @@ public sealed class BookingViewModel : ViewModelBase
         IStringLocalizer<Booking> loc,
         IErrorMessageResolver errorResolver,
         IToastService toastService,
-        IPcUserContext? pcUserContext = null)
+        IPcUserContext? pcUserContext = null,
+        ILogger<BookingViewModel>? logger = null)
     {
         _bookingService = bookingService;
         _employeeService = employeeService;
@@ -81,6 +91,7 @@ public sealed class BookingViewModel : ViewModelBase
         _errorResolver = errorResolver;
         _toastService = toastService;
         _pcUserContext = pcUserContext;
+        _logger = logger ?? NullLogger<BookingViewModel>.Instance;
 
         _notifier.Changed += OnBookingChanged;
     }
@@ -455,6 +466,8 @@ public sealed class BookingViewModel : ViewModelBase
 
     public Task SaveAsync() => RunGuardedAsync(async () =>
     {
+        _logger.LogDebug("SaveAsync starting for employee {EmployeeId}, week {WeekMonday}.", SelectedEmployee?.Id, SelectedWeek?.Monday);
+
         if (SelectedEmployee is null || SelectedWeekView is null)
         {
             return;
@@ -463,96 +476,122 @@ public sealed class BookingViewModel : ViewModelBase
         var employee = SelectedEmployee;
         var view = SelectedWeekView;
 
-        var changedDates = new List<DateOnly>();
-        var attemptedCount = 0;
-        var anyFailed = false;
-        int? lastChangedMenuNumber = null;
+        // Snapshotted once: PendingSelections is an immutable-by-convention IReadOnlyDictionary that gets
+        // replaced wholesale (never mutated in place) every time it changes, so capturing the reference here
+        // is enough to freeze it against a concurrent reseed. A concurrent reload (triggered synchronously by
+        // this very loop's own BookDayAsync/CancelDayAsync -> NotifyChanged -> OnBookingChanged chain, see
+        // Change 2) would otherwise overwrite PendingSelections mid-loop and make remaining days look
+        // unchanged, silently skipping them.
+        var pendingSnapshot = PendingSelections;
 
-        // Resolved once for the whole save, not once per day — it is the same PC user for every
-        // day being saved here. A null/empty result is normal and must not affect the booking.
-        var bookedBy = _pcUserContext is null ? PcUserInfo.Empty : await _pcUserContext.GetCurrentAsync();
-
-        // Sequential, ascending-date order — never Task.WhenAll — mirrors the whole-week booking's
-        // ordering discipline, applied here for consistency even though these calls are independent.
-        foreach (var day in view.Days)
+        _isSubmittingOwnChanges = true;
+        try
         {
-            if (day.EditState != DayEditState.Editable)
-            {
-                continue;
-            }
+            var changedDates = new List<DateOnly>();
+            var attemptedCount = 0;
+            var anyFailed = false;
+            int? lastChangedMenuNumber = null;
 
-            var pending = PendingSelections.TryGetValue(day.Date, out var p) ? p : day.SelectedMenuId;
-            if (pending == day.SelectedMenuId)
-            {
-                continue;
-            }
+            // Resolved once for the whole save, not once per day — it is the same PC user for every
+            // day being saved here. A null/empty result is normal and must not affect the booking.
+            var bookedBy = _pcUserContext is null ? PcUserInfo.Empty : await _pcUserContext.GetCurrentAsync();
 
-            attemptedCount++;
-
-            if (pending is not null)
+            // Sequential, ascending-date order — never Task.WhenAll — mirrors the whole-week booking's
+            // ordering discipline, applied here for consistency even though these calls are independent.
+            foreach (var day in view.Days)
             {
-                var bookResult = await _bookingService.BookDayAsync(new BookingRequest(employee.Id, day.Date, pending.Value, bookedBy));
-                if (bookResult.IsSuccess)
+                if (day.EditState != DayEditState.Editable)
                 {
-                    changedDates.Add(day.Date);
-                    lastChangedMenuNumber = bookResult.Value?.MenuNumber;
+                    continue;
+                }
+
+                var pending = pendingSnapshot.TryGetValue(day.Date, out var p) ? p : day.SelectedMenuId;
+                if (pending == day.SelectedMenuId)
+                {
+                    continue;
+                }
+
+                attemptedCount++;
+
+                if (pending is not null)
+                {
+                    var bookResult = await _bookingService.BookDayAsync(new BookingRequest(employee.Id, day.Date, pending.Value, bookedBy));
+                    if (bookResult.IsSuccess)
+                    {
+                        changedDates.Add(day.Date);
+                        lastChangedMenuNumber = bookResult.Value?.MenuNumber;
+                    }
+                    else
+                    {
+                        _logger.LogWarning(
+                            "BookDayAsync failed for employee {EmployeeId} on {BookingDate}, menu {MenuId}: {ErrorCode}.",
+                            employee.Id, day.Date, pending.Value, bookResult.ErrorCode);
+                        anyFailed = true;
+                    }
                 }
                 else
                 {
-                    anyFailed = true;
+                    var cancelResult = await _bookingService.CancelDayAsync(employee.Id, day.Date);
+                    if (cancelResult.IsSuccess)
+                    {
+                        changedDates.Add(day.Date);
+                        lastChangedMenuNumber = null; // cancellation: no menu number to show
+                    }
+                    else
+                    {
+                        _logger.LogWarning(
+                            "CancelDayAsync failed for employee {EmployeeId} on {BookingDate}: {ErrorCode}.",
+                            employee.Id, day.Date, cancelResult.ErrorCode);
+                        anyFailed = true;
+                    }
+                }
+            }
+
+            _logger.LogDebug(
+                "SaveAsync loop finished for employee {EmployeeId}, week {WeekMonday}: attempted {AttemptedCount}, changed {ChangedCount}, anyFailed {AnyFailed}.",
+                employee.Id, view.Week.Monday, attemptedCount, changedDates.Count, anyFailed);
+
+            // Reload regardless of partial failure, so the grid always reflects actual persisted state.
+            await ReloadSelectedWeekViewAsync();
+            if (changedDates.Contains(_clock.Today))
+            {
+                await ReloadTodayViewAsync();
+            }
+
+            if (attemptedCount == 0)
+            {
+                // Nothing to save — silently no-op, no toast.
+                return;
+            }
+
+            if (anyFailed)
+            {
+                _toastService.ShowError(_loc["SubmitFailureToast"]);
+                return;
+            }
+
+            if (changedDates.Count == 1)
+            {
+                if (lastChangedMenuNumber is not null)
+                {
+                    var dayLabel = changedDates[0].ToString("dddd d MMMM", CultureInfo.CurrentCulture);
+                    _toastService.ShowSuccess(_loc["SubmitSuccessToastTemplate", lastChangedMenuNumber.Value, dayLabel]);
+                }
+                else
+                {
+                    // The single change was a cancellation: SubmitSuccessToastTemplate assumes a booked
+                    // menu number to display, so fall back to the "N day(s) changed" phrasing with count = 1.
+                    _toastService.ShowSuccess(_loc["SubmitSuccessToastMultipleTemplate", 1]);
                 }
             }
             else
             {
-                var cancelResult = await _bookingService.CancelDayAsync(employee.Id, day.Date);
-                if (cancelResult.IsSuccess)
-                {
-                    changedDates.Add(day.Date);
-                    lastChangedMenuNumber = null; // cancellation: no menu number to show
-                }
-                else
-                {
-                    anyFailed = true;
-                }
+                _toastService.ShowSuccess(_loc["SubmitSuccessToastMultipleTemplate", changedDates.Count]);
             }
         }
-
-        // Reload regardless of partial failure, so the grid always reflects actual persisted state.
-        await ReloadSelectedWeekViewAsync();
-        if (changedDates.Contains(_clock.Today))
+        finally
         {
-            await ReloadTodayViewAsync();
-        }
-
-        if (attemptedCount == 0)
-        {
-            // Nothing to save — silently no-op, no toast.
-            return;
-        }
-
-        if (anyFailed)
-        {
-            _toastService.ShowError(_loc["SubmitFailureToast"]);
-            return;
-        }
-
-        if (changedDates.Count == 1)
-        {
-            if (lastChangedMenuNumber is not null)
-            {
-                var dayLabel = changedDates[0].ToString("dddd d MMMM", CultureInfo.CurrentCulture);
-                _toastService.ShowSuccess(_loc["SubmitSuccessToastTemplate", lastChangedMenuNumber.Value, dayLabel]);
-            }
-            else
-            {
-                // The single change was a cancellation: SubmitSuccessToastTemplate assumes a booked
-                // menu number to display, so fall back to the "N day(s) changed" phrasing with count = 1.
-                _toastService.ShowSuccess(_loc["SubmitSuccessToastMultipleTemplate", 1]);
-            }
-        }
-        else
-        {
-            _toastService.ShowSuccess(_loc["SubmitSuccessToastMultipleTemplate", changedDates.Count]);
+            _isSubmittingOwnChanges = false;
         }
     });
 
@@ -567,33 +606,45 @@ public sealed class BookingViewModel : ViewModelBase
         var week = SelectedWeek;
         var menuNumber = WholeWeekMenuNumber.Value;
 
-        // A null/empty PC user is normal and must not affect the booking.
-        var bookedBy = _pcUserContext is null ? PcUserInfo.Empty : await _pcUserContext.GetCurrentAsync();
-
-        var result = await _bookingService.BookWeekAsync(new WeekBookingRequest(employee.Id, week.Monday, menuNumber, bookedBy));
-
-        await ReloadSelectedWeekViewAsync();
-        if (SelectedWeekView is not null && SelectedWeekView.Days.Any(d => d.Date == _clock.Today))
+        _isSubmittingOwnChanges = true;
+        try
         {
-            await ReloadTodayViewAsync();
+            // A null/empty PC user is normal and must not affect the booking.
+            var bookedBy = _pcUserContext is null ? PcUserInfo.Empty : await _pcUserContext.GetCurrentAsync();
+
+            var result = await _bookingService.BookWeekAsync(new WeekBookingRequest(employee.Id, week.Monday, menuNumber, bookedBy));
+
+            _logger.LogDebug(
+                "ApplyMenuToWeekAsync result for employee {EmployeeId}, week {WeekMonday}, menu {MenuNumber}: success {Success}, applied {AppliedCount}.",
+                employee.Id, week.Monday, menuNumber, result.IsSuccess, result.IsSuccess ? result.Value!.AppliedDates.Count : 0);
+
+            await ReloadSelectedWeekViewAsync();
+            if (SelectedWeekView is not null && SelectedWeekView.Days.Any(d => d.Date == _clock.Today))
+            {
+                await ReloadTodayViewAsync();
+            }
+
+            if (!result.IsSuccess)
+            {
+                _toastService.ShowError(_errorResolver.Resolve(result.ErrorCode, result.MessageArgs));
+                return; // Keep whatever LastWholeWeekResult already held — do not overwrite with a failed attempt.
+            }
+
+            var payload = result.Value!;
+            LastWholeWeekResult = payload;
+            SkippedDaysWithLocalizedReasons = BuildSkippedDaysWithLocalizedReasons(payload, menuNumber);
+
+            // Supplementary toast; the page's inline summary panel (from LastWholeWeekResult /
+            // SkippedDaysWithLocalizedReasons) is the primary feedback, so this is skipped when nothing
+            // was actually applied.
+            if (payload.AppliedDates.Count > 0)
+            {
+                _toastService.ShowSuccess(_loc["SubmitSuccessToastMultipleTemplate", payload.AppliedDates.Count]);
+            }
         }
-
-        if (!result.IsSuccess)
+        finally
         {
-            _toastService.ShowError(_errorResolver.Resolve(result.ErrorCode, result.MessageArgs));
-            return; // Keep whatever LastWholeWeekResult already held — do not overwrite with a failed attempt.
-        }
-
-        var payload = result.Value!;
-        LastWholeWeekResult = payload;
-        SkippedDaysWithLocalizedReasons = BuildSkippedDaysWithLocalizedReasons(payload, menuNumber);
-
-        // Supplementary toast; the page's inline summary panel (from LastWholeWeekResult /
-        // SkippedDaysWithLocalizedReasons) is the primary feedback, so this is skipped when nothing
-        // was actually applied.
-        if (payload.AppliedDates.Count > 0)
-        {
-            _toastService.ShowSuccess(_loc["SubmitSuccessToastMultipleTemplate", payload.AppliedDates.Count]);
+            _isSubmittingOwnChanges = false;
         }
     });
 
@@ -753,6 +804,12 @@ public sealed class BookingViewModel : ViewModelBase
     {
         try
         {
+            if (_isSubmittingOwnChanges)
+            {
+                _logger.LogDebug("Ignoring booking-change notification for {ChangedDate}: this VM is currently submitting its own changes.", changedDate);
+                return;
+            }
+
             if (SelectedEmployee is null || _isHandlingChangeNotification)
             {
                 return;
